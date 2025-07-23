@@ -149,8 +149,9 @@ class GGSTBot(discord.Client):
         matches = history_data.get("history", [])
         print(f"    {len(matches)} matches trouvés pour {char_name}")
         
-        new_matches = 0
-        for match in matches[-MATCHES_TO_CHECK:]:  # Check last N matches
+        # Collect new matches first
+        new_matches_list = []
+        for match in matches[:MATCHES_TO_CHECK]:  # Check first N matches (most recent)
             match_id = f"{match['timestamp']}_{match['opponent_id']}"
             
             if match_id not in player_cache:
@@ -160,18 +161,33 @@ class GGSTBot(discord.Client):
                 char = char_data["character"]
                 result = "win" if match["result_win"] else "loss"
                 
-                # Create and send embed
-                embed = self.create_match_embed(name, char, opponent, opponent_char, match, result)
+                # Store match info for sending later
+                new_matches_list.append({
+                    'match': match,
+                    'match_id': match_id,
+                    'opponent': opponent,
+                    'opponent_char': opponent_char,
+                    'char': char,
+                    'result': result
+                })
                 
-                print(f"    📢 Nouveau match: {name} ({char}) {result} vs {opponent} ({opponent_char})")
-                await channel.send(embed=embed)
-                player_cache.append(match_id)
-                new_matches += 1
+                print(f"    📢 Nouveau match trouvé: {name} ({char}) {result} vs {opponent} ({opponent_char})")
+    
+        # Send matches in reverse order (oldest new match first)
+        for match_info in reversed(new_matches_list):
+            embed = self.create_match_embed(name, match_info['char'], match_info['opponent'], 
+                                          match_info['opponent_char'], match_info['match'], match_info['result'])
+            
+            await channel.send(embed=embed)
+            player_cache.append(match_info['match_id'])
         
-        if new_matches == 0:
+        new_matches_count = len(new_matches_list)
+        if new_matches_count == 0:
             print(f"    ✓ Aucun nouveau match pour {char_name}")
+        else:
+            print(f"    ✅ {new_matches_count} nouveaux matches envoyés pour {char_name}")
         
-        return new_matches
+        return new_matches_count
 
     async def check_player(self, session: aiohttp.ClientSession, channel: discord.TextChannel, name: str, player_id: str):
         """Main function to check a player's recent matches"""

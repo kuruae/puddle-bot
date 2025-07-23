@@ -36,7 +36,7 @@ class GGSTBot(discord.Client):
             print("Démarrage de la surveillance des matches...")
             self.poll_matches.start()
 
-    @tasks.loop(minutes=5)
+    @tasks.loop(seconds=5)
     async def poll_matches(self):
         await self.wait_until_ready()
         
@@ -56,30 +56,41 @@ class GGSTBot(discord.Client):
         self.save_cache()
 
     async def check_player(self, session: aiohttp.ClientSession, channel: discord.TextChannel, name: str, player_id: str):
-        url = f"https://puddle.farm/api/player/{player_id}/matches?take=5"
-        async with session.get(url) as resp:
+        player_url = f"https://puddle.farm/api/player/{player_id}"
+        async with session.get(player_url) as resp:
             if resp.status != 200:
-                print(f"Failed to fetch matches for {name}: {resp.status}")
+                print(f"Failed to fetch player info for {name}: {resp.status}")
                 return
-            matches = await resp.json()
+            player_data = await resp.json()
 
         player_cache = self.cache.setdefault(player_id, [])
-        for match in reversed(matches):
-            match_id = str(match.get("id"))
-            if match_id not in player_cache:
-                opponent = match["opponent"]["name"]
-                opponent_char = match["opponent"]["character"]
-                char = match["character"]
-                result = match["result"]
-                score = match["score"]
-                change = match["change"]
-                action = "vient de gagner contre" if result == "win" else "vient de perdre contre"
-                message = (
-                    f"{name} ({char}) {action} {opponent} ({opponent_char})"
-                    f" — Score {score}, {change:+} pts"
-                )
-                await channel.send(message)
-                player_cache.append(match_id)
+
+        for char_data in player_data.get("ratings", []):
+            char_short = char_data["char_short"]
+            history_url = f"https://puddle.farm/api/player/{player_id}/{char_short}/history"
+
+            async with session.get(history_url) as resp:
+                if resp.status != 200:
+                    continue
+
+            history_data = await resp.json()
+            matches = history_data.get("history", [])
+
+            for match in matches[-5:]:
+                match_id = f"{match['timestamp']}_{match['opponent_id']}"
+
+                if match_id not in player_cache:
+                    opponent = match["opponent_name"]
+                    opponent_char = match["opponent_character"]
+                    char = char_data["character"]
+                    result = "win" if match["result_win"] else "loss"
+                    
+                    action = "vient de gagner contre" if result == "win" else "vient de perdre contre"
+                    message = f"{name} ({char}) {action} {opponent} ({opponent_char})"
+                    
+                    await channel.send(message)
+                    player_cache.append(match_id)
+
         self.cache[player_id] = player_cache[-20:]
 
 intents = discord.Intents.default()

@@ -24,16 +24,29 @@ class GGSTBot(discord.Client):
             json.dump(self.cache, f)
 
     async def setup_hook(self):
-        self.poll_matches.start()
+        # Ne pas démarrer la tâche ici, attendre on_ready
+        pass
+
+    async def on_ready(self):
+        print(f"Bot connecté en tant que {self.user}")
+        print(f"Membre de {len(self.guilds)} serveur(s)")
+        
+        # Démarrer la tâche maintenant que le bot est prêt
+        if not self.poll_matches.is_running():
+            print("Démarrage de la surveillance des matches...")
+            self.poll_matches.start()
 
     @tasks.loop(minutes=5)
     async def poll_matches(self):
-        print("Guilds:", [g.name for g in self.guilds])
-        for g in self.guilds:
-            print(f" Channels in '{g.name}':", [c.name for c in g.text_channels])
+        await self.wait_until_ready()
+        
+        if not self.guilds:
+            print("ERREUR: Le bot n'est membre d'aucun serveur Discord!")
+            return
+        
         channel = self.get_channel(CHANNEL_ID)
         if channel is None:
-            print(f"Impossible de récupérer le channel ID {CHANNEL_ID}.")
+            print(f"ERREUR: Impossible de récupérer le channel ID {CHANNEL_ID}.")
             return
 
         async with aiohttp.ClientSession() as session:
@@ -70,5 +83,7 @@ class GGSTBot(discord.Client):
         self.cache[player_id] = player_cache[-20:]
 
 intents = discord.Intents.default()
+intents.guilds = True
+intents.guild_messages = True
 bot = GGSTBot(intents=intents)
 bot.run(DISCORD_TOKEN)

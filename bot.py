@@ -2,7 +2,7 @@ import json
 import aiohttp
 import discord
 from discord.ext import tasks
-from config import DISCORD_TOKEN, CHANNEL_NAME, PLAYER_IDS
+from config import DISCORD_TOKEN, CHANNEL_ID, PLAYER_IDS
 
 CACHE_FILE = "cache.json"
 
@@ -28,9 +28,12 @@ class GGSTBot(discord.Client):
 
     @tasks.loop(minutes=5)
     async def poll_matches(self):
-        channel = discord.utils.get(self.get_all_channels(), name=CHANNEL_NAME)
+        print("Guilds:", [g.name for g in self.guilds])
+        for g in self.guilds:
+            print(f" Channels in '{g.name}':", [c.name for c in g.text_channels])
+        channel = self.get_channel(CHANNEL_ID)
         if channel is None:
-            print(f"Channel '{CHANNEL_NAME}' not found")
+            print(f"Impossible de récupérer le channel ID {CHANNEL_ID}.")
             return
 
         async with aiohttp.ClientSession() as session:

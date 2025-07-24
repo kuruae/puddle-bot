@@ -9,9 +9,9 @@ from config import DISCORD_TOKEN, CHANNEL_ID, PLAYER_IDS
 
 CACHE_FILE = "cache.json"
 REQUEST_TIMEOUT = 10  # seconds
-POLL_INTERVAL = 2  # minutes
+POLL_INTERVAL = 6  # minutes
 MATCHES_TO_CHECK = 5  # number of recent matches to check per character
-CACHE_SIZE = 100  # maximum number of matches to keep in cache per player
+CACHE_SIZE = 20  # maximum number of matches to keep in cache per player
 
 # Discord embed colors
 COLOR_WIN = 0x00FF00  # Green
@@ -62,7 +62,7 @@ class GGSTBot(discord.Client):
             print("Démarrage de la surveillance des matches...")
             self.poll_matches.start()
 
-    @tasks.loop(minutes=POLL_INTERVAL)
+    @tasks.loop(seconds=POLL_INTERVAL)
     async def poll_matches(self):
         await self.wait_until_ready()
         print("🔍 Vérification des matches en cours...")
@@ -135,11 +135,14 @@ class GGSTBot(discord.Client):
         return embed
 
     async def process_character_matches(self, session: aiohttp.ClientSession, channel: discord.TextChannel, 
-                                      name: str, player_id: str, char_data: dict, player_cache: list):
+                                      name: str, player_id: str, char_data: dict, player_cache: dict):
         """Process matches for a specific character"""
         char_short = char_data["char_short"]
         char_name = char_data["character"]
         print(f"    Vérification {char_name} ({char_short})...")
+        
+        # Get cache for this specific character
+        char_cache = player_cache.setdefault(char_short, [])
         
         # Fetch match history
         history_data = await self.fetch_character_history(session, player_id, char_short, char_name)
@@ -154,7 +157,7 @@ class GGSTBot(discord.Client):
         for match in matches[:MATCHES_TO_CHECK]:  # Check first N matches (most recent)
             match_id = f"{match['timestamp']}_{match['opponent_id']}"
             
-            if match_id not in player_cache:
+            if match_id not in char_cache:  # Check against character-specific cache
                 # Extract match info
                 opponent = match["opponent_name"]
                 opponent_char = match["opponent_character"]
@@ -172,14 +175,17 @@ class GGSTBot(discord.Client):
                 })
                 
                 print(f"    📢 Nouveau match trouvé: {name} ({char}) {result} vs {opponent} ({opponent_char})")
-    
-        # Send matches in reverse order (oldest new match first)
+
+    # Send matches in reverse order (oldest new match first)
         for match_info in reversed(new_matches_list):
             embed = self.create_match_embed(name, match_info['char'], match_info['opponent'], 
                                           match_info['opponent_char'], match_info['match'], match_info['result'])
             
             await channel.send(embed=embed)
-            player_cache.append(match_info['match_id'])
+            char_cache.append(match_info['match_id'])  # Add to character-specific cache
+    
+        # Clean up character cache
+        player_cache[char_short] = char_cache[-CACHE_SIZE:]
         
         new_matches_count = len(new_matches_list)
         if new_matches_count == 0:
@@ -197,16 +203,14 @@ class GGSTBot(discord.Client):
             return
         
         print(f"  Données joueur récupérées pour {name}")
-        player_cache = self.cache.setdefault(player_id, [])
+        # Cache structure: {player_id: {char_short: [match_ids...]}}
+        player_cache = self.cache.setdefault(player_id, {})
         
         # Process each character
         total_new_matches = 0
         for char_data in player_data.get("ratings", []):
             new_matches = await self.process_character_matches(session, channel, name, player_id, char_data, player_cache)
             total_new_matches += new_matches
-        
-        # Clean up cache (keep last N matches)
-        self.cache[player_id] = player_cache[-CACHE_SIZE:]
         
         if total_new_matches > 0:
             print(f"  ✅ {total_new_matches} nouveaux matches pour {name}")

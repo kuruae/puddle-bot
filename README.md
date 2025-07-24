@@ -10,11 +10,11 @@ This bot posts Guilty Gear Strive match results to a Discord channel using the P
 pip install -r requirements.txt
 ```
 
-2. Edit `config.py` and set your Discord bot token.
+2. Make `config.py` and set your Discord bot token. You can copy `conf_example.py` to `config.py` and fill in your details.
 3. Run the bot:
 
 ```bash
 python bot.py
 ```
 
-The bot checks new matches every five minutes and announces them in the channel specified in `config.py`.
+The bot checks new matches every n minutes and announces them in the channel specified in `config.py`.

@@ -5,10 +5,26 @@ import aiohttp
 import discord
 from discord.ext import tasks, commands
 from database import Database
+from dotenv import load_dotenv
 
-# Load environment variables
-DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
-CHANNEL_ID = int(os.getenv('CHANNEL_ID'))
+# Load environment variables from .env file for local development
+load_dotenv()
+
+# Load environment variables with fallbacks
+try:
+    # Try to import from config.py for backwards compatibility
+    from config import DISCORD_TOKEN as CONFIG_TOKEN, CHANNEL_ID as CONFIG_CHANNEL_ID
+    DISCORD_TOKEN = os.getenv('DISCORD_TOKEN', CONFIG_TOKEN)
+    CHANNEL_ID = int(os.getenv('CHANNEL_ID', CONFIG_CHANNEL_ID))
+except ImportError:
+    # Use environment variables only
+    DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
+    CHANNEL_ID = int(os.getenv('CHANNEL_ID'))
+    
+    if not DISCORD_TOKEN:
+        raise ValueError("DISCORD_TOKEN environment variable is required")
+    if not CHANNEL_ID:
+        raise ValueError("CHANNEL_ID environment variable is required")
 
 # Constants
 REQUEST_TIMEOUT = 10  # seconds

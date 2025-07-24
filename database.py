@@ -1,48 +1,82 @@
 import os
 import json
+import sqlite3
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
 class Database:
     def __init__(self):
         self.connection = None
+        self.is_postgres = False
         self.connect()
         self.setup_tables()
     
     def connect(self):
-        """Connect to PostgreSQL database"""
-        try:
-            self.connection = psycopg2.connect(
-                os.getenv('DATABASE_URL'),
-                cursor_factory=RealDictCursor
-            )
-            print("✅ Connected to PostgreSQL database")
-        except Exception as e:
-            print(f"❌ Database connection failed: {e}")
+        """Connect to database (PostgreSQL in production, SQLite locally)"""
+        database_url = os.getenv('DATABASE_URL')
+        
+        if database_url and database_url.startswith('postgres'):
+            # Production: PostgreSQL
+            try:
+                self.connection = psycopg2.connect(database_url, cursor_factory=RealDictCursor)
+                self.is_postgres = True
+                print("✅ Connected to PostgreSQL database")
+            except Exception as e:
+                print(f"❌ PostgreSQL connection failed: {e}")
+                raise
+        else:
+            # Local development: SQLite
+            try:
+                self.connection = sqlite3.connect('local_bot.db')
+                self.connection.row_factory = sqlite3.Row  # For dict-like access
+                self.is_postgres = False
+                print("✅ Connected to SQLite database (local development)")
+            except Exception as e:
+                print(f"❌ SQLite connection failed: {e}")
+                raise
     
     def setup_tables(self):
         """Create necessary tables"""
         cursor = self.connection.cursor()
         
-        # Players table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS players (
-                id BIGINT PRIMARY KEY,
-                name VARCHAR(100) NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        
-        # Match cache table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS match_cache (
-                player_id BIGINT,
-                character VARCHAR(10),
-                match_id VARCHAR(100),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (player_id, character, match_id)
-            )
-        """)
+        if self.is_postgres:
+            # PostgreSQL syntax
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS players (
+                    id BIGINT PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS match_cache (
+                    player_id BIGINT,
+                    character VARCHAR(10),
+                    match_id VARCHAR(100),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (player_id, character, match_id)
+                )
+            """)
+        else:
+            # SQLite syntax
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS players (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS match_cache (
+                    player_id INTEGER,
+                    character TEXT,
+                    match_id TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (player_id, character, match_id)
+                )
+            """)
         
         self.connection.commit()
         cursor.close()
@@ -50,10 +84,17 @@ class Database:
     def get_player_cache(self, player_id: str) -> dict:
         """Get cached matches for a player"""
         cursor = self.connection.cursor()
-        cursor.execute(
-            "SELECT character, match_id FROM match_cache WHERE player_id = %s ORDER BY created_at DESC",
-            (player_id,)
-        )
+        
+        if self.is_postgres:
+            cursor.execute(
+                "SELECT character, match_id FROM match_cache WHERE player_id = %s ORDER BY created_at DESC",
+                (player_id,)
+            )
+        else:
+            cursor.execute(
+                "SELECT character, match_id FROM match_cache WHERE player_id = ? ORDER BY created_at DESC",
+                (player_id,)
+            )
         
         cache = {}
         for row in cursor.fetchall():
@@ -68,36 +109,66 @@ class Database:
     def save_match_to_cache(self, player_id: str, character: str, match_id: str):
         """Save a match to cache"""
         cursor = self.connection.cursor()
-        cursor.execute(
-            "INSERT INTO match_cache (player_id, character, match_id) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING",
-            (player_id, character, match_id)
-        )
+        
+        if self.is_postgres:
+            cursor.execute(
+                "INSERT INTO match_cache (player_id, character, match_id) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING",
+                (player_id, character, match_id)
+            )
+        else:
+            cursor.execute(
+                "INSERT OR IGNORE INTO match_cache (player_id, character, match_id) VALUES (?, ?, ?)",
+                (player_id, character, match_id)
+            )
+        
         self.connection.commit()
         cursor.close()
     
     def cleanup_cache(self, player_id: str, character: str, cache_size: int = 20):
         """Keep only the most recent N matches for a character"""
         cursor = self.connection.cursor()
-        cursor.execute("""
-            DELETE FROM match_cache 
-            WHERE player_id = %s AND character = %s 
-            AND match_id NOT IN (
-                SELECT match_id FROM match_cache 
+        
+        if self.is_postgres:
+            cursor.execute("""
+                DELETE FROM match_cache 
                 WHERE player_id = %s AND character = %s 
-                ORDER BY created_at DESC 
-                LIMIT %s
-            )
-        """, (player_id, character, player_id, character, cache_size))
+                AND match_id NOT IN (
+                    SELECT match_id FROM match_cache 
+                    WHERE player_id = %s AND character = %s 
+                    ORDER BY created_at DESC 
+                    LIMIT %s
+                )
+            """, (player_id, character, player_id, character, cache_size))
+        else:
+            cursor.execute("""
+                DELETE FROM match_cache 
+                WHERE player_id = ? AND character = ? 
+                AND match_id NOT IN (
+                    SELECT match_id FROM match_cache 
+                    WHERE player_id = ? AND character = ? 
+                    ORDER BY created_at DESC 
+                    LIMIT ?
+                )
+            """, (player_id, character, player_id, character, cache_size))
+        
         self.connection.commit()
         cursor.close()
     
     def add_player(self, player_id: str, name: str):
         """Add a new player to track"""
         cursor = self.connection.cursor()
-        cursor.execute(
-            "INSERT INTO players (id, name) VALUES (%s, %s) ON CONFLICT (id) DO UPDATE SET name = %s",
-            (player_id, name, name)
-        )
+        
+        if self.is_postgres:
+            cursor.execute(
+                "INSERT INTO players (id, name) VALUES (%s, %s) ON CONFLICT (id) DO UPDATE SET name = %s",
+                (player_id, name, name)
+            )
+        else:
+            cursor.execute(
+                "INSERT OR REPLACE INTO players (id, name) VALUES (?, ?)",
+                (player_id, name)
+            )
+        
         self.connection.commit()
         cursor.close()
     

@@ -183,3 +183,19 @@ class Database:
         
         cursor.close()
         return players
+    
+    def remove_player(self, player_id: str):
+        """Remove a player from tracking"""
+        cursor = self.connection.cursor()
+        
+        if self.is_postgres:
+            # Remove player and their cache
+            cursor.execute("DELETE FROM match_cache WHERE player_id = %s", (player_id,))
+            cursor.execute("DELETE FROM players WHERE id = %s", (player_id,))
+        else:
+            # SQLite
+            cursor.execute("DELETE FROM match_cache WHERE player_id = ?", (player_id,))
+            cursor.execute("DELETE FROM players WHERE id = ?", (player_id,))
+        
+        self.connection.commit()
+        cursor.close()

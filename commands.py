@@ -156,7 +156,7 @@ class GGSTCommands(commands.Cog):
     
 
 
-	
+
     @app_commands.command(name="help", description="Show help information")
     async def help_command(self, interaction: discord.Interaction):
         """Show help information"""
@@ -191,4 +191,8 @@ class GGSTCommands(commands.Cog):
 # Function to setup commands
 async def setup(bot):
     """Setup function for loading the cog"""
-    await bot.add_cog(GGSTCommands(bot))
+    cog = GGSTCommands(bot)
+    await bot.add_cog(cog)
+    
+    # Manually add commands to the tree if needed
+    print(f"Added {len(cog.get_app_commands())} app commands to cog")

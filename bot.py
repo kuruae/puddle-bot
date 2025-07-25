@@ -50,14 +50,23 @@ class GGSTBot(commands.Bot):
     async def setup_hook(self):
         """Called when the bot is starting up"""
         # Load command cogs
-        await self.load_extension('commands')  # the parameter matches the filename
+        try:
+            await self.load_extension('commands')  # the parameter matches the filename
+            print("✅ Commands cog loaded successfully")
+        except Exception as e:
+            print(f"❌ Failed to load commands cog: {e}")
+            return
 
         # Sync slash commands
         try:
             synced = await self.tree.sync()
             print(f"✅ Synchronized {len(synced)} slash command(s)")
+            for cmd in synced:
+                print(f"  - /{cmd.name}: {cmd.description}")
         except Exception as e:
             print(f"❌ Failed to sync commands: {e}")
+            import traceback
+            traceback.print_exc()
     
     async def on_ready(self):
         """Called when the bot is ready"""
@@ -67,6 +76,11 @@ class GGSTBot(commands.Bot):
         # Show server and channel info
         for guild in self.guilds:
             print(f"Serveur: {guild.name} (ID: {guild.id})")
+        
+        # Debug: Show loaded commands
+        print(f"Commandes dans l'arbre: {len(self.tree.get_commands())}")
+        for cmd in self.tree.get_commands():
+            print(f"  - /{cmd.name}")
         
         channel = self.get_channel(CHANNEL_ID)
         if channel:

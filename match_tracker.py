@@ -95,7 +95,7 @@ class MatchTracker:
             formatted_time = local_time.strftime('%Y-%m-%d %H:%M:%S')
         except (ValueError, KeyError):
             formatted_time = match['timestamp']
-        
+
         embed.set_footer(text=f"puddle.farm • {formatted_time}")
         return embed
 

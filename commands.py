@@ -40,7 +40,6 @@ class GGSTCommands(commands.Cog):
         self.db: Database = bot.db
 
 
-
     @app_commands.command(name="add_player", description="Add a player to the tracker")
     @app_commands.describe(
         player_id="The player's ID from puddle.farm",
@@ -258,6 +257,25 @@ class GGSTCommands(commands.Cog):
             content=message_content,
             embed=embed
         )
+
+
+
+
+    @owner_only()
+    @app_commands.command(name="sync_guild", description="Sync commands to this server only")
+    async def sync_guild_only(self, interaction: discord.Interaction):
+        """Sync commands to current guild only (faster for testing)"""
+        await interaction.response.defer(ephemeral=True)
+
+        try:
+            synced = await self.bot.tree.sync(guild=interaction.guild)
+            await interaction.followup.send(
+                f"✅ Synced {len(synced)} commands to **{interaction.guild.name}**"
+            )
+        except discord.app_commands.errors.CommandSyncFailure as e:
+            await interaction.followup.send(f"❌ Sync failed: {str(e)}")
+        except discord.HTTPException as e:
+            await interaction.followup.send(f"❌ Discord HTTP error: {str(e)}")
 
 
 # Function to setup commands

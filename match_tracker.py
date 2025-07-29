@@ -2,6 +2,7 @@
 Match tracking and processing logic for puddle bot
 """
 from typing import Optional
+from datetime import datetime, timedelta
 import aiohttp
 import discord
 
@@ -75,14 +76,27 @@ class MatchTracker:
             )
 
         # Add additional match info
-        if 'floor' in match:
-            embed.add_field(name="Étage", value=match['floor'], inline=True)
         if 'own_rating_value' in match:
             embed.add_field(
-                name="Rating", value=f"{match['own_rating_value']:.0f}", inline=True
+                name=f"{name}'s Rating", value=f"{match['own_rating_value']:.0f}", inline=True
             )
+        if 'opponent_rating_value' in match:
+            embed.add_field(
+                name=f"{opponent}'s Rating", value=f"{match['opponent_rating_value']:.0f}",
+                inline=True
+            )
+        if 'floor' in match:
+            value = "C" if match['floor'] == 99 else match['floor']
+            embed.add_field(name="Étage", value=value, inline=True)
 
-        embed.set_footer(text=f"puddle.farm • {match['timestamp']}")
+        try:
+            api_time = datetime.strptime(match['timestamp'], '%Y-%m-%d %H:%M:%S')
+            local_time = api_time + timedelta(hours=2)
+            formatted_time = local_time.strftime('%Y-%m-%d %H:%M:%S')
+        except (ValueError, KeyError):
+            formatted_time = match['timestamp']
+        
+        embed.set_footer(text=f"puddle.farm • {formatted_time}")
         return embed
 
     async def process_character_matches(self, session: aiohttp.ClientSession,

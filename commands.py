@@ -247,7 +247,12 @@ class GGSTCommands(commands.Cog):
             color=0xFF69B4
         )
 
-        embed.set_image(url="https://media.discordapp.net/attachments/1239571704812933218/1399147784065650748/60d0c8465ff6c.png?ex=6889ebaa&is=68889a2a&hm=9d811f7f7f9c755740b5da25bff8cc4adc0d6d35b4c8211d829ee4e04b33aa57&=&format=webp&quality=lossless&width=1876&height=1604")
+        embed.set_image(url=(
+            "https://media.discordapp.net/attachments/1239571704812933218/"
+            "1399147784065650748/60d0c8465ff6c.png?ex=6889ebaa&is=68889a2a&"
+            "hm=9d811f7f7f9c755740b5da25bff8cc4adc0d6d35b4c8211d829ee4e04b33aa57&="
+            "&format=webp&quality=lossless&width=1876&height=1604"
+        ))
 
         await interaction.response.send_message(
             content=message_content,

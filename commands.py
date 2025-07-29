@@ -1,6 +1,8 @@
 """
 Discord slash commands for the puddle bot
 """
+import os
+from functools import wraps
 import aiohttp
 import discord
 from discord import app_commands
@@ -11,6 +13,23 @@ from database import Database
 # API URLs
 API_BASE_URL = "https://puddle.farm/api"
 API_PLAYER_URL = f"{API_BASE_URL}/player"
+
+
+def owner_only():
+    """Decorator to restrict commands to bot owner only"""
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(self, interaction: discord.Interaction, *args, **kwargs):
+            owner_id = os.getenv('BOT_OWNER_ID')
+            if owner_id and str(interaction.user.id) != owner_id:
+                await interaction.response.send_message(
+                    "Cette commande est réservée au propriétaire du bot.", 
+                    ephemeral=True
+                )
+                return
+            return await func(self, interaction, *args, **kwargs)
+        return wrapper
+    return decorator
 
 
 class GGSTCommands(commands.Cog):
@@ -196,13 +215,44 @@ class GGSTCommands(commands.Cog):
         )
 
         embed.add_field(
-            name="ℹ️ Information",
+            name="Informations",
             value="Le bot vérifie automatiquement les nouveaux matches toutes les 2 minutes.",
             inline=False
         )
 
         embed.set_footer(text="Source: github.com/kuruae/puddle-bot")
         await interaction.response.send_message(embed=embed)
+
+
+
+
+    @owner_only()
+    @app_commands.command(name="hugo", description="Sends millia oki disk to hugo")
+    async def hugo_command(self, interaction: discord.Interaction):
+        """Sends millia oki disk to hugo"""
+        hugo_id = os.getenv('HUGO_USER_ID')
+
+        if not hugo_id:
+            await interaction.response.send_message(
+                "❌ HUGO_USER_ID n'est pas configuré.", 
+                ephemeral=True
+            )
+            return
+
+        message_content = f"<@{hugo_id}> sale loser"
+
+        embed = discord.Embed(
+            title="🥏 Millia Oki Disk",
+            description="bloques ça pour voir",
+            color=0xFF69B4
+        )
+
+        embed.set_image(url="https://media.discordapp.net/attachments/1239571704812933218/1399147784065650748/60d0c8465ff6c.png?ex=6889ebaa&is=68889a2a&hm=9d811f7f7f9c755740b5da25bff8cc4adc0d6d35b4c8211d829ee4e04b33aa57&=&format=webp&quality=lossless&width=1876&height=1604")
+
+        await interaction.response.send_message(
+            content=message_content,
+            embed=embed
+        )
 
 
 # Function to setup commands

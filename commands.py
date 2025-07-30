@@ -147,7 +147,7 @@ class GGSTCommands(commands.Cog):
                         return
 
                     player_data = await resp.json()
-                    
+            
                     # Get the actual player name from API if we didn't have it
                     if not player_name:
                         player_name = player_data.get("name", name_or_id)

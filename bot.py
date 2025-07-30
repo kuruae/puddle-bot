@@ -39,7 +39,7 @@ except ImportError as exc:
 POLL_INTERVAL = int(os.getenv('POLL_INTERVAL', '2'))  # 2 minutes default
 
 
-class GGSTBot(commands.Bot(owner_id=int(os.getenv('BOT_OWNER_ID')))):
+class GGSTBot(commands.Bot):
     """Main GGST Match Tracker Bot"""
 
     def __init__(self):

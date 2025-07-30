@@ -117,6 +117,29 @@ class GGSTCommands(commands.Cog):
 
 
 
+    def format_character_info(self, char_data: dict) -> str:
+        """Helper function to format a single character's information"""
+        char_name = char_data["character"]
+        rating = char_data.get("rating", 0)
+        match_count = char_data.get("match_count", 0)
+
+        # Base character info
+        info_lines = [f"**{char_name}**: {rating:.0f} ({match_count} matches)"]
+
+        # Add character rank if available
+        if char_data.get("top_char", 0) > 0:
+            info_lines.append(f"└ Rang: #{char_data['top_char']}")
+
+        # Add best victory for this character
+        if "top_defeated" in char_data and char_data["top_defeated"]["value"] > 0:
+            top_defeated = char_data["top_defeated"]
+            info_lines.append(
+                f"└ Meilleure victoire: **{top_defeated['name']}** "
+                f"({top_defeated['char_short']}) - {top_defeated['value']:.0f}"
+            )
+
+        return "\n".join(info_lines)
+
     @app_commands.command(name="stats", description="Show statistics for a player")
     @app_commands.describe(name_or_id="The player's name (if tracked) or puddle.farm ID")
     async def stats(self, interaction: discord.Interaction, name_or_id: str):
@@ -152,60 +175,48 @@ class GGSTCommands(commands.Cog):
                     if not player_name:
                         player_name = player_data.get("name", name_or_id)
 
-                    # Create stats embed
                     embed = discord.Embed(
-                        title=f"📊 Statistiques de {player_name}",
+                        title=f"🖩 Statistiques de {player_name}",
                         color=0x0099FF
                     )
 
-                    # Add character ratings (sorted by rating, top 3)
-                    ratings = player_data.get("ratings", [])
-                    if ratings:
-                        # Sort by rating in descending order and take top 3
-                        sorted_ratings = sorted(ratings, key=lambda x: x.get("rating", 0),reverse=True)
-                        char_info = []
-                        for char in sorted_ratings[:3]:  # Show top 3 characters
-                            char_name = char["character"]
-                            rating = char.get("rating", 0)
-                            match_count = char.get("match_count", 0)
-                            char_info.append(
-                                f"**{char_name}**: {rating:.0f} ({match_count} matches)"
-                            )
-
+                    if "top_global" in player_data and player_data["top_global"] > 0:
                         embed.add_field(
-                            name="Top 3 Personnages",
-                            value="\n".join(char_info),
+                            name="🏆 Classement Global",
+                            value=f"#{player_data['top_global']}",
                             inline=False
                         )
 
-                        # Add top defeated opponent info from highest rated character
-                        top_char = sorted_ratings[0]
-                        if "top_defeated" in top_char and top_char["top_defeated"]["value"] > 0:
-                            top_defeated = top_char["top_defeated"]
+                    # Filter and sort characters (minimum 15 matches)
+                    ratings = player_data.get("ratings", [])
+                    if ratings:
+                        # Filter characters with at least 15 matches and sort by rating
+                        filtered_chars = [
+                            char for char in ratings
+                            if char.get("match_count", 0) >= 15
+                        ]
+                        sorted_ratings = sorted(
+                            filtered_chars,
+                            key=lambda x: x.get("rating", 0),
+                            reverse=True
+                        )
+
+                        # Show top 3 characters (each with their own info)
+                        for i, char in enumerate(sorted_ratings[:3], 1):
+                            char_info = self.format_character_info(char)
                             embed.add_field(
-                                name="Meilleure Victoire",
-                                value=(
-                                    f"**{top_defeated['name']}** ({top_defeated['char_short']}) - "
-                                    f"{top_defeated['value']:.0f} rating"
-                                ),
+                                name=f"Personnage #{i}",
+                                value=char_info,
                                 inline=False
                             )
 
-                        # Add character rank if available (top_char != 0)
-                        if "top_char" in player_data and top_char.get("top_char", 0) > 0:
+                        # If no characters meet the criteria, show a message
+                        if not filtered_chars:
                             embed.add_field(
-                                name="Classement Personnage",
-                                value=f"#{top_char['top_char']} {top_char['character']}",
-                                inline=True
+                                name="Personnages",
+                                value="Aucun personnage avec 15+ matches",
+                                inline=False
                             )
-
-                    # Add global rank if available
-                    if "top_global" in player_data and player_data["top_global"] > 0:
-                        embed.add_field(
-                            name="Classement Global",
-                            value=f"#{player_data['top_global']}",
-                            inline=True
-                        )
 
                     embed.set_footer(text="puddle.farm")
                     await interaction.followup.send(embed=embed)
@@ -231,7 +242,7 @@ class GGSTCommands(commands.Cog):
                 "`/add_player <id> <nom>` - Ajouter un joueur\n"
                 "`/list_players` - Liste des joueurs surveillés\n"
                 "`/remove_player <nom>` - Retirer un joueur\n"
-                "`/stats <nom>` - Statistiques d'un joueur\n"
+                "`/stats <nom>/<id>` - Statistiques d'un joueur\n"
                 "`/help` - Afficher cette aide"
             ),
             inline=False

@@ -6,8 +6,8 @@ and SQLite (local development).
 """
 import os
 import sqlite3
-import psycopg2
-from psycopg2.extras import RealDictCursor
+import psycopg
+from psycopg.rows import dict_row
 
 
 class Database:
@@ -26,8 +26,8 @@ class Database:
         if database_url and database_url.startswith('postgres'):
             # Production: PostgreSQL
             try:
-                self.connection = psycopg2.connect(
-                    database_url, cursor_factory=RealDictCursor
+                self.connection = psycopg.connect(
+                    database_url, row_factory=dict_row
                 )
                 self.is_postgres = True
                 print("✅ Connected to PostgreSQL database")

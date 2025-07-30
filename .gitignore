@@ -6,6 +6,8 @@ config.py
 cache.json
 local_bot.db
 *.db
+*.sql
+db_backup*
 
 # Python
 __pycache__/

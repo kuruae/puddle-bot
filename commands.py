@@ -2,12 +2,10 @@
 Discord slash commands for the puddle bot
 """
 import os
-from functools import wraps
 import aiohttp
 import discord
-from discord import app_commands
+from discord import app_commands, Interaction
 from discord.ext import commands
-
 from database import Database
 
 # API URLs
@@ -15,22 +13,11 @@ API_BASE_URL = "https://puddle.farm/api"
 API_PLAYER_URL = f"{API_BASE_URL}/player"
 
 
-def owner_only():
-    """Decorator to restrict commands to bot owner only"""
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(self, interaction: discord.Interaction, *args, **kwargs):
-            owner_id = os.getenv('BOT_OWNER_ID')
-            if owner_id and str(interaction.user.id) != owner_id:
-                await interaction.response.send_message(
-                    "Cette commande est réservée au propriétaire du bot.", 
-                    ephemeral=True
-                )
-                return
-            return await func(self, interaction, *args, **kwargs)
-        return wrapper
-    return decorator
-
+def is_owner():
+    """Check if the command is run by the bot owner"""
+    async def predicate(interaction: Interaction) -> bool:
+        return interaction.user.id == int(os.getenv('BOT_OWNER_ID'))
+    return app_commands.check(predicate)
 
 class GGSTCommands(commands.Cog):
     """Command handlers for puddle bot"""
@@ -225,8 +212,8 @@ class GGSTCommands(commands.Cog):
 
 
 
-    @owner_only()
     @app_commands.command(name="hugo", description="Sends millia oki disk to hugo")
+    @is_owner()
     async def hugo_command(self, interaction: discord.Interaction):
         """Sends millia oki disk to hugo"""
         hugo_id = os.getenv('HUGO_USER_ID')
@@ -261,8 +248,8 @@ class GGSTCommands(commands.Cog):
 
 
 
-    @owner_only()
     @app_commands.command(name="sync_guild", description="Sync commands to this server only")
+    @is_owner()
     async def sync_guild_only(self, interaction: discord.Interaction):
         """Sync commands to current guild only (faster for testing)"""
         await interaction.response.defer(ephemeral=True)

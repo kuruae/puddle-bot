@@ -16,7 +16,13 @@ API_PLAYER_URL = f"{API_BASE_URL}/player"
 def is_owner():
     """Check if the command is run by the bot owner"""
     async def predicate(interaction: Interaction) -> bool:
-        return interaction.user.id == int(os.getenv('BOT_OWNER_ID'))
+        if interaction.user.id != int(os.getenv('BOT_OWNER_ID')):
+            await interaction.response.send_message(
+                "Owner-only command.",
+                ephemeral=True
+            )
+            return False
+        return True
     return app_commands.check(predicate)
 
 class GGSTCommands(commands.Cog):
@@ -111,44 +117,54 @@ class GGSTCommands(commands.Cog):
 
 
 
-    @app_commands.command(name="stats", description="Show statistics for a tracked player")
-    @app_commands.describe(name="The player's name")
-    async def stats(self, interaction: discord.Interaction, name: str):
+    @app_commands.command(name="stats", description="Show statistics for a player")
+    @app_commands.describe(name_or_id="The player's name (if tracked) or puddle.farm ID")
+    async def stats(self, interaction: discord.Interaction, name_or_id: str):
         """Show player statistics"""
         await interaction.response.defer()
 
         try:
             players = self.db.get_all_players()
-            if name not in players:
-                await interaction.followup.send(
-                    f"❌ Joueur **{name}** non trouvé.", ephemeral=True
-                )
-                return
+            player_id = None
+            player_name = None
 
-            player_id = players[name]
+            # Check if input is a tracked player name
+            if name_or_id in players:
+                player_id = players[name_or_id]
+                player_name = name_or_id
+            else:
+                # Assume it's a player ID
+                player_id = name_or_id
+                # We'll get the name from the API response
 
             # Fetch current player data
             async with aiohttp.ClientSession() as session:
                 async with session.get(f"{API_PLAYER_URL}/{player_id}") as resp:
                     if resp.status != 200:
                         await interaction.followup.send(
-                            f"❌ Impossible de récupérer les données pour {name}"
+                            f"❌ Joueur `{name_or_id}` introuvable sur puddle.farm"
                         )
                         return
 
                     player_data = await resp.json()
+                    
+                    # Get the actual player name from API if we didn't have it
+                    if not player_name:
+                        player_name = player_data.get("name", name_or_id)
 
                     # Create stats embed
                     embed = discord.Embed(
-                        title=f"📊 Statistiques de {name}",
+                        title=f"📊 Statistiques de {player_name}",
                         color=0x0099FF
                     )
 
-                    # Add character ratings
+                    # Add character ratings (sorted by rating, top 3)
                     ratings = player_data.get("ratings", [])
                     if ratings:
+                        # Sort by rating in descending order and take top 3
+                        sorted_ratings = sorted(ratings, key=lambda x: x.get("rating", 0),reverse=True)
                         char_info = []
-                        for char in ratings[:5]:  # Show top 5 characters
+                        for char in sorted_ratings[:3]:  # Show top 3 characters
                             char_name = char["character"]
                             rating = char.get("rating", 0)
                             match_count = char.get("match_count", 0)
@@ -157,20 +173,41 @@ class GGSTCommands(commands.Cog):
                             )
 
                         embed.add_field(
-                            name="🥊 Personnages Principaux",
+                            name="Top 3 Personnages",
                             value="\n".join(char_info),
                             inline=False
                         )
 
+                        # Add top defeated opponent info from highest rated character
+                        top_char = sorted_ratings[0]
+                        if "top_defeated" in top_char and top_char["top_defeated"]["value"] > 0:
+                            top_defeated = top_char["top_defeated"]
+                            embed.add_field(
+                                name="Meilleure Victoire",
+                                value=(
+                                    f"**{top_defeated['name']}** ({top_defeated['char_short']}) - "
+                                    f"{top_defeated['value']:.0f} rating"
+                                ),
+                                inline=False
+                            )
+
+                        # Add character rank if available (top_char != 0)
+                        if "top_char" in player_data and top_char.get("top_char", 0) > 0:
+                            embed.add_field(
+                                name="Classement Personnage",
+                                value=f"#{top_char['top_char']} {top_char['character']}",
+                                inline=True
+                            )
+
                     # Add global rank if available
-                    if "top_global" in player_data:
+                    if "top_global" in player_data and player_data["top_global"] > 0:
                         embed.add_field(
-                            name="🏆 Classement Global",
+                            name="Classement Global",
                             value=f"#{player_data['top_global']}",
                             inline=True
                         )
 
-                    embed.set_footer(text="Données de puddle.farm")
+                    embed.set_footer(text="puddle.farm")
                     await interaction.followup.send(embed=embed)
 
         except (aiohttp.ClientError, aiohttp.ServerTimeoutError, ValueError, KeyError) as exc:

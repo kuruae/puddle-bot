@@ -86,7 +86,7 @@ class MatchTracker:
                 inline=True
             )
         if 'floor' in match:
-            value = "C" if match['floor'] == 99 else match['floor']
+            value = "C" if match['floor'] == "99" else match['floor']
             embed.add_field(name="Étage", value=value, inline=True)
 
         try:

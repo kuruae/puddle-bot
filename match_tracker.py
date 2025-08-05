@@ -53,9 +53,38 @@ class MatchTracker:
                 return None
             return await resp.json()
 
+    def print_hidden_match(self, name: str, char: str, opponent_char: str, result: str) -> discord.Embed:
+        """Create an embed for a hidden match"""
+
+        if result == "win":
+            embed = discord.Embed(
+                title="🏆 Victoire!",
+                description=(
+                    f"**{name}** ({char}) a gagné contre un adversaire inconnu "
+                    f"({opponent_char})"
+                ),
+                color=COLOR_WIN
+            )
+        else:
+            embed = discord.Embed(
+                title="💀 Défaite",
+                description=(
+                    f"**{name}** ({char}) a perdu contre un adversaire inconnu "
+                    f"({opponent_char})"
+                ),
+                color=COLOR_LOSS
+            )
+
+        embed.set_footer(text="puddle.farm • Profile caché")
+        return embed
+
     def create_match_embed(self, name: str, char: str, opponent: str,
                           opponent_char: str, match: dict, result: str) -> discord.Embed:
         """Create a Discord embed for a match result"""
+
+        if match['opponent_id'] == "0" or match['opponent_id'] == 0:
+            return self.print_hidden_match(name, char, opponent_char, result)
+
         if result == "win":
             embed = discord.Embed(
                 title="🏆 Victoire!",

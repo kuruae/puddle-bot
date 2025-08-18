@@ -29,7 +29,7 @@ class MatchTracker:
         self.db = db
 
     async def fetch_player_data(self, session: aiohttp.ClientSession,
-                                player_id: str, name: str) -> Optional[dict]:
+                                player_id: str, name: str) -> dict | None:
         """Fetch player data from puddle.farm API"""
         player_url = f"{API_PLAYER_URL}/{player_id}"
         print(f"  Récupération des infos joueur: {player_url}")
@@ -42,7 +42,7 @@ class MatchTracker:
 
     async def fetch_character_history(self, session: aiohttp.ClientSession,
                                       player_id: str, char_short: str,
-                                      char_name: str) -> Optional[dict]:
+                                      char_name: str) -> dict | None:
         """Fetch match history for a specific character"""
         history_url = f"{API_PLAYER_URL}/{player_id}/{char_short}/history"
         print(f"    Récupération historique: {history_url}")

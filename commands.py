@@ -12,6 +12,12 @@ from database import Database
 API_BASE_URL = "https://puddle.farm/api"
 API_PLAYER_URL = f"{API_BASE_URL}/player"
 
+# @TODO: Separate commands into different files bc they are getting too large
+#
+#       I don't know if python supports multiple files for a single cog, nor how
+#       to do it if so, and I have to read about how/if python has interfaces
+#       or abstract classes, so I can define a common interface for all commands.
+#       Maybe if Hugo started helping me it would be done already </3
 
 def is_owner():
     """Check if the command is run by the bot owner"""
@@ -242,6 +248,134 @@ class GGSTCommands(commands.Cog):
 
 
 
+    # -------------------------
+    # Leaderboard helpers
+    # -------------------------
+
+    async def _fetch_leaderboard(self, character: str | None = None) -> list[dict]:
+        """Fetch top players from puddle.farm, optionally filtered by character.
+
+        Returns a list (expected up to 100 entries).
+        """
+        if character:
+            url = f"{API_PLAYER_URL}/top_char/{character}"
+        else:
+            url = f"{API_PLAYER_URL}/top"
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as resp:
+                if resp.status != 200:
+                    return []
+                return await resp.json()
+
+
+    def _build_leaderboard_pages(self, data: list[dict],
+                                    character: str | None = None,
+                                    page_size: int = 10) -> list[discord.Embed]:
+        """Turn raw leaderboard data into a list of embeds (pages)."""
+        pages: list[discord.Embed] = []
+        if not data:
+            embed = discord.Embed(
+                title="🏆 Classement",
+                description="Aucune donnée disponible.",
+                color=0x0099FF
+            )
+            pages.append(embed)
+            return pages
+
+        total = len(data)
+        title = "🏆 Classement Global" if not character else f"🏆 Classement {character}"
+        for start in range(0, total, page_size):
+
+            slice_ = data[start:start + page_size]
+            lines = []
+
+            for idx, entry in enumerate(slice_, start=start + 1):
+                name = entry.get("name", "?")
+                rating = entry.get("rating")
+                char_long = entry.get("char_long")
+                # Show character tag only if character filter not applied
+                if not character and char_long:
+                    line = f"**#{idx}** {name} ({char_long}) - {rating:.0f}"
+                else:
+                    line = f"**#{idx}** {name} - {rating:.0f}"
+                lines.append(line)
+            page_num = (start // page_size) + 1
+            page_total = (total + page_size - 1) // page_size
+            embed = discord.Embed(
+                title=title,
+                description="\n".join(lines) or "(vide)",
+                color=0x0099FF
+            )
+            embed.set_footer(text=f"Page {page_num}/{page_total} • puddle.farm")
+            pages.append(embed)
+        return pages
+
+    class LeaderboardView(discord.ui.View):
+        """Interactive pagination view for leaderboard."""
+        def __init__(self, pages: list[discord.Embed], user_id: int, timeout: float = 120):
+            super().__init__(timeout=timeout)
+            self.pages = pages
+            self.index = 0
+            self.user_id = user_id
+
+            self.prev_button: discord.ui.Button | None = None
+            self.next_button: discord.ui.Button | None = None
+
+            for child in self.children:
+                if isinstance(child, discord.ui.Button):
+                    if child.custom_id == "lb_prev":
+                        self.prev_button = child
+                    elif child.custom_id == "lb_next":
+                        self.next_button = child
+            self._update_button_states()
+
+        def _update_button_states(self):
+            """Enable/disable navigation buttons based on current index."""
+            if self.prev_button:
+                self.prev_button.disabled = self.index <= 0
+            if self.next_button:
+                self.next_button.disabled = self.index >= len(self.pages) - 1
+
+        @discord.ui.button(label="◀", style=discord.ButtonStyle.primary, custom_id="lb_prev")
+        async def previous(self, interaction: discord.Interaction, _button: discord.ui.Button):
+            """Go to previous page."""
+            self.index = max(self.index - 1, 0)
+            self._update_button_states()
+            await interaction.response.edit_message(embed=self.pages[self.index], view=self)
+
+        @discord.ui.button(label="▶", style=discord.ButtonStyle.primary, custom_id="lb_next")
+        async def next(self, interaction: discord.Interaction, _button: discord.ui.Button):
+            """Go to next page."""
+            self.index = min(self.index + 1, len(self.pages) - 1)
+            self._update_button_states()
+            await interaction.response.edit_message(embed=self.pages[self.index], view=self)
+
+        @discord.ui.button(label="🛑", style=discord.ButtonStyle.danger, custom_id="leaderboard_stop")
+        async def end(self, interaction: discord.Interaction, _button: discord.ui.Button):  # type: ignore
+            """Disable pagination controls."""
+            for child in self.children:
+                if isinstance(child, discord.ui.Button):
+                    child.disabled = True
+            await interaction.response.edit_message(view=self)
+            super().stop()
+
+    @app_commands.command(name="top", description="Show top players in the database")
+    @app_commands.describe(character="Filter by character name (optional)")
+    async def top(self, interaction: discord.Interaction, character: str | None = None):
+        """Show top players leaderboard (with pagination)."""
+        await interaction.response.defer()
+        try:
+            data = await self._fetch_leaderboard(character)
+            pages = self._build_leaderboard_pages(data, character)
+            view = self.LeaderboardView(pages, interaction.user.id)
+            await interaction.followup.send(embed=pages[0], view=view)
+        except (aiohttp.ClientError, aiohttp.ServerTimeoutError) as exc:
+            await interaction.followup.send(f"❌ Erreur de récupération du classement: {exc}")
+
+
+
+
     @app_commands.command(name="help", description="Show help information")
     async def help_command(self, interaction: discord.Interaction):
         """Show help information"""
@@ -258,6 +392,7 @@ class GGSTCommands(commands.Cog):
                 "`/list_players` - Liste des joueurs surveillés\n"
                 "`/remove_player <nom>` - Retirer un joueur\n"
                 "`/stats <nom>/<id>` - Statistiques d'un joueur\n"
+                "`/top [personnage]` - Classement des joueurs\n"
                 "`/help` - Afficher cette aide"
             ),
             inline=False
@@ -297,6 +432,7 @@ class GGSTCommands(commands.Cog):
         )
 
         embed.set_image(url=(
+            # Split long URL across lines for pylint line length
             "https://media.discordapp.net/attachments/1239571704812933218/"
             "1399147784065650748/60d0c8465ff6c.png?ex=6889ebaa&is=68889a2a&"
             "hm=9d811f7f7f9c755740b5da25bff8cc4adc0d6d35b4c8211d829ee4e04b33aa57&="

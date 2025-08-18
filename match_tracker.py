@@ -1,7 +1,6 @@
 """
 Match tracking and processing logic for puddle bot
 """
-from typing import Optional
 from datetime import datetime, timedelta
 import aiohttp
 import discord

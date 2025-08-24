@@ -112,19 +112,21 @@ class Leaderboard(commands.Cog, name="Leaderboard"):
 			pages.append(embed)
 		return pages
 
-	@app_commands.command(name="top", description="Show top players in the database")
-	@app_commands.describe(character="Filter by character name (optional)")
+	@app_commands.command(name="top", description="Show top players in the database.")
+	@app_commands.describe(character="Optional: Filter by character (short code like SO, KY, etc.)")
 	async def top(self, interaction: discord.Interaction, character: str | None = None):
 		"""Show top players leaderboard (with pagination)."""
 		await interaction.response.defer()
 		try:
-			char = verify_char_short(character)
+			char: str | None = None
+			if character:
+				char = verify_char_short(character)
 			data = await self._fetch_leaderboard(char)
 			pages = self._build_leaderboard_pages(data, char)
 			view = LeaderboardView(pages, interaction.user.id)
 			await interaction.followup.send(embed=pages[0], view=view)
 		except bot_exceptions.CharNotFound as e:
-			await interaction.followup.send(f"❌ {e}")
+			await interaction.followup.send(f"❌ {e}. Use ``/help characters`` to get all short codes.")
 		except (aiohttp.ClientError, aiohttp.ServerTimeoutError) as exc:
 			await interaction.followup.send(f"❌ Erreur de récupération du classement: {exc}")
 

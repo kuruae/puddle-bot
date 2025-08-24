@@ -6,6 +6,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from database import Database
+from utils.helpers import calculate_rank
 from .base_command import API_PLAYER_URL
 
 MIN_MATCHES = 1
@@ -25,7 +26,7 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 		match_count = char_data.get("match_count", 0)
 
 		# Base character info
-		info_lines = [f"**{char_name}**: {rating} ({match_count} matches)"]
+		info_lines = [f"**{char_name}**: {rating} - {calculate_rank(rating)} ({match_count} matches)"]
 
 		# Add character rank if available
 		if char_data.get("top_char", 0) > 0:
@@ -67,7 +68,7 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 	def _build_stats_embed(self, player_name: str, player_data: dict) -> discord.Embed:
 		"""Construct the statistics embed from player data."""
 		embed = discord.Embed(
-			title=f"📊 Statistiques de {player_name}",
+			title=f"🤓☝️ Statistiques de {player_name}",
 			color=0x0099FF
 		)
 

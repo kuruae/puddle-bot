@@ -1,3 +1,7 @@
+# OUTDATED
+
+TODO: update this doc, make a centralized API client with proper async context management (top priority but im lazy), everything else should come after
+
 # GGST Discord Bot
 
 This bot posts Guilty Gear Strive match results to a Discord channel using the Puddle Farm API.

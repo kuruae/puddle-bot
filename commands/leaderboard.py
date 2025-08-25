@@ -8,6 +8,7 @@ from discord.ext import commands
 
 import utils.exceptions as bot_exceptions
 from utils.helpers import verify_char_short
+from utils.helpers import str_elo
 from .base_command import API_BASE_URL
 
 
@@ -104,7 +105,7 @@ class Leaderboard(commands.Cog, name="Leaderboard"):
 
 			for idx, entry in enumerate(slice_, start=start + 1):
 				name = entry.get("name", "?")
-				rating = entry.get("rating")
+				rating = str_elo(entry.get("rating"))
 				char_long = entry.get("char_long")
 				# Show character tag only if character filter not applied
 				if not character and char_long:

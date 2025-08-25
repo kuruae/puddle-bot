@@ -7,6 +7,7 @@ import discord
 
 from database import Database
 from utils.helpers import calculate_rank
+from utils.helpers import str_elo
 
 # Configuration constants
 REQUEST_TIMEOUT = 10  # seconds
@@ -76,8 +77,8 @@ class MatchTracker:
 				color=COLOR_LOSS
 			)
 
-		own_rating = match.get("own_rating_value")
-		opp_rating = match.get("opponent_rating_value")
+		own_rating = str_elo(match.get("own_rating_value"))
+		opp_rating = str_elo(match.get("opponent_rating_value"))
 
 		# Replace individual inline fields with grouped per-player fields
 		if own_rating is not None:

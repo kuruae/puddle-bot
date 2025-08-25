@@ -84,3 +84,21 @@ def calculate_rank(elo: int) -> str:
 		if elo >= threshold:
 			return rank
 	return "Unranked"
+
+
+def str_elo(elo: int) -> str:
+	"""Normalize / format the elo rating.
+
+	Why the 8 and 4 magic numbers:
+		It seems that currently, after reaching vanquisher the elo system changes from 'RP' to 'DR'
+		When this happens, the API sends the DR elo as a 8 digits number starting by 1000
+		and ending by the actual elo.
+	"""
+	string_elo = str(elo)
+	if elo > 45000 and len(string_elo) == 8:
+		string_elo = string_elo[4:]
+		string_elo += " DR"
+	else:
+		string_elo += " RP"
+
+	return string_elo

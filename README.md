@@ -4,7 +4,7 @@ TODO:
 
 update this doc, make a centralized API client with proper async context management (top priority but im lazy), everything else should come after in term of development, improve logging and error handling etc etc yyeyeyeyeyehh
 
-in terms of functionnalities: fix top/leaderboard command, get the stats command and the tracker to include a link to puddle.farm, search rating by username instead of IDs for users who aren't inside the bot's database
+in terms of functionnalities: ~~fix top/leaderboard command~~(done), ~~get the stats command and the tracker to include a link to puddle.farm~~(apparently not possible to hyperlink the footer), search rating by username instead of IDs for users who aren't inside the bot's database
 
 ~~# GGST Discord Bot~~
 

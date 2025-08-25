@@ -7,6 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 from database import Database
 from utils.helpers import calculate_rank
+from utils.helpers import str_elo
 from .base_command import API_PLAYER_URL
 
 MIN_MATCHES = 1
@@ -22,7 +23,7 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 	def _format_character_info(self, char_data: dict) -> str:
 		"""Helper function to format a single character's information"""
 		char_name = char_data["character"]
-		rating = char_data.get("rating", 0)
+		rating = str_elo(char_data.get("rating", 0))
 		match_count = char_data.get("match_count", 0)
 
 		# Base character info

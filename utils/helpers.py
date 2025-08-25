@@ -94,6 +94,8 @@ def str_elo(elo: int) -> str:
 		When this happens, the API sends the DR elo as a 8 digits number starting by 1000
 		and ending by the actual elo.
 	"""
+	if elo == 0:
+		return "Placement games"
 	string_elo = str(elo)
 	if elo > 45000 and len(string_elo) == 8:
 		string_elo = string_elo[4:]

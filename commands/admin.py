@@ -241,7 +241,7 @@ class Admin(commands.Cog, name="Admin"):
 			await interaction.followup.send(
 				"✅ Code executed (output too long, sent as file):",
 				file=discord.File(buffer, filename="eval_output.txt"),
-				ephemeral=True
+				ephemeral=False
 			)
 		else:
 			await interaction.followup.send(full_response, ephemeral=False)

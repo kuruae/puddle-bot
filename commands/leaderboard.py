@@ -63,7 +63,7 @@ class Leaderboard(commands.Cog, name="Leaderboard"):
 			url = f"{API_BASE_URL}/top_char/{character}"
 		else:
 			url = f"{API_BASE_URL}/top"
-	   
+
 		async with aiohttp.ClientSession() as session:
 			async with session.get(url) as resp:
 				if resp.status != 200:

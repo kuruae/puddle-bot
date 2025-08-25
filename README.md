@@ -6,23 +6,23 @@ update this doc, make a centralized API client with proper async context managem
 
 in terms of functionnalities: fix top/leaderboard command, get the stats command and the tracker to include a link to puddle.farm, search rating by username instead of IDs for users who aren't inside the bot's database
 
-# GGST Discord Bot
+~~# GGST Discord Bot~~
 
-This bot posts Guilty Gear Strive match results to a Discord channel using the Puddle Farm API.
+~~This bot posts Guilty Gear Strive match results to a Discord channel using the Puddle Farm API.~~
 
-## Setup
+~~## Setup~~
 
-1. Install the dependencies:
+~~1. Install the dependencies:~~
 
 ```bash
 pip install -r requirements.txt
 ```
 
-2. Make `config.py` and set your Discord bot token. You can copy `conf_example.py` to `config.py` and fill in your details.
-3. Run the bot:
+~~2. Make `config.py` and set your Discord bot token. You can copy `conf_example.py` to `config.py` and fill in your details.~~
+~~3. Run the bot:~~
 
 ```bash
 python bot.py
 ```
 
-The bot checks new matches every n minutes and announces them in the channel specified in `config.py`.
+~~The bot checks new matches every n minutes and announces them in the channel specified in `config.py`.~~

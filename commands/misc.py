@@ -15,8 +15,10 @@ class Miscellaneous(commands.Cog, name="Miscellaneous"):
 		self.bot = bot
 
 	@app_commands.command(name="help", description="Show help information")
-	async def help_command(self, interaction: discord.Interaction):
+	@app_commands.describe(option="(Unused) Option for future use")
+	async def help_command(self, interaction: discord.Interaction, option: str | None = None):
 		"""Show help information"""
+		str(option)
 		embed = discord.Embed(
 			title="Puddle Bot",
 			description="Bot qui surveille les matches GGST sur puddle.farm",

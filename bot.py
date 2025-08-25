@@ -51,7 +51,8 @@ class GGSTBot(commands.Bot):
 			'commands.player_management',
 			'commands.stats',
 			'commands.leaderboard',
-			'commands.misc'
+			'commands.misc',
+			'commands.admin'
 		]
 
 		loaded, failed = [], {}

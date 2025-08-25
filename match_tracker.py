@@ -76,33 +76,22 @@ class MatchTracker:
 				color=COLOR_LOSS
 			)
 
-		# Add additional match info
-		if 'own_rating_value' in match:
-			embed.add_field(
-				name=f"{name}'s Rating", value=f"{match['own_rating_value']}",
-				inline=True
-			)
-			embed.add_field(
-				name="Rank", value=f"{calculate_rank(match['own_matchmaking_rating'])}",
-				inline=True
-			)
+		own_rating = match.get("own_rating_value")
+		if own_rating is not None:
+			embed.add_field(name=f"Rating {name}", value=str(own_rating), inline=True)
+			embed.add_field(name=f"Rang {name}", value=calculate_rank(own_rating), inline=True)
 
-		if 'opponent_rating_value' in match:
-			embed.add_field(
-				name=f"{opponent}'s Rating", value=f"{match['opponent_rating_value']}",
-				inline=True
-			)
-			embed.add_field(
-				name="Rank", value=f"{calculate_rank(match['opponent_rating_value'])}",
-				inline=True
-			)
+		opp_rating = match.get("opponent_rating_value")
+		if opp_rating is not None:
+			embed.add_field(name=f"Rating {opponent}", value=str(opp_rating), inline=True)
+			embed.add_field(name=f"Rang {opponent}", value=calculate_rank(opp_rating), inline=True)
 
 		try:
 			api_time = datetime.strptime(match['timestamp'], '%Y-%m-%d %H:%M:%S')
 			local_time = api_time + timedelta(hours=2)
 			formatted_time = local_time.strftime('%Y-%m-%d %H:%M:%S')
 		except (ValueError, KeyError):
-			formatted_time = match['timestamp']
+			formatted_time = match.get('timestamp', '?')
 
 		embed.set_footer(text=f"puddle.farm • {formatted_time}")
 		return embed

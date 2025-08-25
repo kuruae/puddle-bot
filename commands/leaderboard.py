@@ -63,12 +63,24 @@ class Leaderboard(commands.Cog, name="Leaderboard"):
 			url = f"{API_BASE_URL}/top_char/{character}"
 		else:
 			url = f"{API_BASE_URL}/top"
-
+	   
 		async with aiohttp.ClientSession() as session:
 			async with session.get(url) as resp:
 				if resp.status != 200:
 					return []
-				return await resp.json()
+				payload = await resp.json()
+
+		# API currently returns {"ranks": [...]} – normalize to list
+		if isinstance(payload, list):
+			return payload
+		if isinstance(payload, dict):
+			if isinstance(payload.get("ranks"), list):
+				return payload["ranks"]
+			# Fallback: first list value inside dict
+			for val in payload.values():
+				if isinstance(val, list):
+					return val
+		return []
 
 	def _build_leaderboard_pages(self, data: list[dict],
 								 character: str | None = None,

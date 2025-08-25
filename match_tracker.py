@@ -77,14 +77,22 @@ class MatchTracker:
 			)
 
 		own_rating = match.get("own_rating_value")
-		if own_rating is not None:
-			embed.add_field(name=f"Rating {name}", value=str(own_rating), inline=True)
-			embed.add_field(name=f"Rang {name}", value=calculate_rank(own_rating), inline=True)
-
 		opp_rating = match.get("opponent_rating_value")
+
+		# Replace individual inline fields with grouped per-player fields
+		if own_rating is not None:
+			embed.add_field(
+				name=name,
+				value=f"Rating: {own_rating}\nRang: {calculate_rank(own_rating)}",
+				inline=False
+			)
+
 		if opp_rating is not None:
-			embed.add_field(name=f"Rating {opponent}", value=str(opp_rating), inline=True)
-			embed.add_field(name=f"Rang {opponent}", value=calculate_rank(opp_rating), inline=True)
+			embed.add_field(
+				name=opponent,
+				value=f"Rating: {opp_rating}\nRang: {calculate_rank(opp_rating)}",
+				inline=False
+			)
 
 		try:
 			api_time = datetime.strptime(match['timestamp'], '%Y-%m-%d %H:%M:%S')

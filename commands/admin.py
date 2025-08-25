@@ -244,7 +244,7 @@ class Admin(commands.Cog, name="Admin"):
 				ephemeral=True
 			)
 		else:
-			await interaction.followup.send(full_response, ephemeral=True)
+			await interaction.followup.send(full_response, ephemeral=False)
 
 	@app_commands.command(name="evalpy", description="Execute Python code with syntax highlighting")
 	@app_commands.describe(code="Python code to run (no need for code blocks)")

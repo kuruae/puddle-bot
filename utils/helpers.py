@@ -1,4 +1,5 @@
 """Helper functions and constants (not a cog)."""
+from typing import Any
 import utils.exceptions as bot_exceptions
 
 _CHAR_SHORT_CODES: set[str] = {
@@ -104,3 +105,15 @@ def str_elo(elo: int) -> str:
 		string_elo += " RP"
 
 	return string_elo
+
+
+def to_int(value: Any) -> int | None:
+	"""Best-effort conversion of API numeric field to int.
+
+	Accepts int directly, or a purely digit string. Returns None otherwise.
+	"""
+	if isinstance(value, int):
+		return value
+	if isinstance(value, str) and value.isdigit():
+		return int(value)
+	return None

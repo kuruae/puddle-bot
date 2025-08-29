@@ -22,23 +22,20 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 	def _format_character_info(self, char_data: dict) -> str:
 		"""Helper function to format a single character's information"""
 		char_name = char_data["character"]
-		rating = to_int(char_data.get("rating", 0))
-		rating = str_elo(rating)
+		rating_int = to_int(char_data.get("rating", 0)) or 0
+		rating_display = str_elo(rating_int)
 		match_count = char_data.get("match_count", 0)
 
-		# Base character info
-		info_lines = [f"**{char_name}**: {rating} - {calculate_rank(rating)} ({match_count} matches)"]
+		info_lines = [f"**{char_name}**: {rating_display} - {calculate_rank(rating_int)} ({match_count} matches)"]
 
-		# Add character rank if available
 		if char_data.get("top_char", 0) > 0:
 			info_lines.append(f"┗ Rang: #{char_data['top_char']}")
 
-		# Add best victory for this character
-		if "top_defeated" in char_data and char_data["top_defeated"]["value"] > 0:
-			top_defeated = char_data["top_defeated"]
+		top_defeated = char_data.get("top_defeated")
+		if isinstance(top_defeated, dict) and top_defeated.get("value", 0) > 0:
 			info_lines.append(
-				f"┗ Meilleure victoire: **{top_defeated['name']}** "
-				f"({top_defeated['char_short']}) - {top_defeated['value']}"
+				f"┗ Meilleure victoire: **{top_defeated.get('name','?')}** "
+				f"({top_defeated.get('char_short','?')}) - {top_defeated.get('value')}"
 			)
 
 		return "\n".join(info_lines)
@@ -141,38 +138,38 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 	async def distribution(self, interaction: discord.Interaction):
 		"""Display character distribution across the past month"""
 		await interaction.response.defer()
-		data = await self.get_popularity_request()
-		if not data:
-			await interaction.followup.send("❌ Impossible de récupérer les données de popularité.")
-			return
+		try:
+			data = await self.get_popularity_request()
+			if not data:
+				await interaction.followup.send("❌ Impossible de récupérer les données.")
+				return
 
-		per_player_list = data.get("per_player", [])
-		total = data.get("per_player_total") or sum(d.get("value", 0) for d in per_player_list)
+			per_player_list = data.get("per_player", [])
+			total = data.get("per_player_total")
 
-		per_player_list = sorted(per_player_list, key=lambda d: d.get("value", 0), reverse=True)
+			per_player_list = sorted(per_player_list, key=lambda d: d.get("value", 0), reverse=True)
 
-		embed = discord.Embed(
-			title="Distribution des Personnages (Players)",
-			color=0x0099FF
-		)
+			lines: list[str] = []
+			for _rank, entry in enumerate(per_player_list, 1):
+				name = entry.get("name", "Inconnu")
+				count = entry.get("value", 0)
+				pct = (count / total * 100) if total else 0
 
-		for entry in per_player_list:
-			name = entry.get("name", "Inconnu")
-			count = entry.get("value", 0)
-			pct = (count / total * 100) if total else 0
-			embed.add_field(
-				name=name,
-				value=f"Nombre de joueurs: {count} ({pct:.2f}%)",
-				inline=False
+				lines.append(f"**{name}** — {count} joueurs ({pct:.2f}%)")
+
+			description = "\n".join(lines)
+
+			embed = discord.Embed(
+				title="Distribution des Personnages (Players)",
+				description=description,
+				color=0x0099FF
 			)
-
-		embed.set_footer(
-			text=(
-				f"Matches totaux: {total} • puddle.farm • {data.get('last_update', '?')}"
+			embed.set_footer(
+				text=f"Total joueurs: {total} • puddle.farm • {data.get('last_update', '?')}"
 			)
-		)
-
-		await interaction.followup.send(embed=embed)
+			await interaction.followup.send(embed=embed)
+		except (aiohttp.ClientError, aiohttp.ServerTimeoutError, ValueError, KeyError) as e:
+			await interaction.followup.send(f"❌ Erreur interne distribution: {e}")
 
 
 async def setup(bot):

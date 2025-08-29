@@ -5,9 +5,11 @@ import os
 import discord
 from discord import app_commands
 from discord.ext import commands
+from utils.helpers import is_api_healthy
 from .base_command import is_owner
 
-
+RED = 0xFF0000
+GREEN = 0x00FF00
 class Miscellaneous(commands.Cog, name="Miscellaneous"):
 	"""Miscellaneous commands"""
 
@@ -95,6 +97,27 @@ class Miscellaneous(commands.Cog, name="Miscellaneous"):
 			await interaction.followup.send(f"❌ Sync failed: {str(e)}")
 		except discord.HTTPException as e:
 			await interaction.followup.send(f"❌ Discord HTTP error: {str(e)}")
+
+
+	@app_commands.command(name="health", description="Checks API health")
+	async def health_check(self, interaction: discord.Interaction):
+		"""Check API health"""
+
+		color_to_apply = RED
+		status_message = "API health check failed."
+		check = await is_api_healthy()
+
+		if check:
+			color_to_apply = GREEN
+			status_message = "OK ✅"
+
+		embed = discord.Embed(
+			title="API Health Check",
+			color=color_to_apply
+		)
+		embed.add_field(name="Status", value=status_message, inline=False)
+
+		await interaction.response.send_message(embed=embed)
 
 
 async def setup(bot):

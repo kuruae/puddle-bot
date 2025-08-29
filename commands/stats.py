@@ -7,7 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 from database import Database
 from utils.helpers import calculate_rank, str_elo, to_int
-from .base_command import API_PLAYER_URL
+from .base_command import API_PLAYER_URL, API_BASE_URL
 
 MIN_MATCHES = 1
 NUMBER_OF_CHARACTERS = 3  # Number of characters to display in stats
@@ -126,6 +126,53 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 
 		except (aiohttp.ClientError, aiohttp.ServerTimeoutError, ValueError, KeyError) as exc:
 			await interaction.followup.send(f"❌ Erreur: {exc}")
+
+
+	async def get_popularity_request(self) -> dict | None:
+		"""Fetch character popularity data from the API."""
+		async with aiohttp.ClientSession() as session:
+			async with session.get(f"{API_BASE_URL}/popularity") as resp:
+				if resp.status != 200:
+					return None
+				return await resp.json()
+
+	@app_commands.command(name="distribution", description="Display character distribution"
+							" across the past month")
+	async def distribution(self, interaction: discord.Interaction):
+		"""Display character distribution across the past month"""
+		await interaction.response.defer()
+		data = await self.get_popularity_request()
+		if not data:
+			await interaction.followup.send("❌ Impossible de récupérer les données de popularité.")
+			return
+
+		per_player_list = data.get("per_player", [])
+		total = data.get("per_player_total") or sum(d.get("value", 0) for d in per_player_list)
+
+		per_player_list = sorted(per_player_list, key=lambda d: d.get("value", 0), reverse=True)
+
+		embed = discord.Embed(
+			title="Distribution des Personnages (Players)",
+			color=0x0099FF
+		)
+
+		for entry in per_player_list:
+			name = entry.get("name", "Inconnu")
+			count = entry.get("value", 0)
+			pct = (count / total * 100) if total else 0
+			embed.add_field(
+				name=name,
+				value=f"Nombre de joueurs: {count} ({pct:.2f}%)",
+				inline=False
+			)
+
+		embed.set_footer(
+			text=(
+				f"Matches totaux: {total} • puddle.farm • {data.get('last_update', '?')}"
+			)
+		)
+
+		await interaction.followup.send(embed=embed)
 
 
 async def setup(bot):

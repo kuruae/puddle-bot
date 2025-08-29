@@ -177,14 +177,14 @@ class Admin(commands.Cog, name="Admin"):
 
 		except asyncio.TimeoutError:
 			await interaction.followup.send(
-				f"⏰ Code execution timed out after {EVAL_TIMEOUT} seconds", 
+				f"⏰ Code execution timed out after {EVAL_TIMEOUT} seconds",
 				ephemeral=True
 			)
 			return
 
 		except SyntaxError as err:
 			await interaction.followup.send(
-				f"❌ Syntax Error: `{err}`\nLine {err.lineno}: {err.text}", 
+				f"❌ Syntax Error: `{err}`\nLine {err.lineno}: {err.text}",
 				ephemeral=True
 			)
 			return
@@ -209,7 +209,7 @@ class Admin(commands.Cog, name="Admin"):
 				cleaned_tb = "...\n" + cleaned_tb
 
 			await interaction.followup.send(
-				f"❌ **Error:**\n```py\n{cleaned_tb}\n```", 
+				f"❌ **Error:**\n```py\n{cleaned_tb}\n```",
 				ephemeral=True
 			)
 			return

@@ -26,6 +26,7 @@ class ApiError(Exception):
 
 
 class ApiResponseError(ApiError):
+	"""Non-2xx HTTP response."""
 	def __init__(self, status: int, body: str | None, message: str = "HTTP error"):
 		super().__init__(f"{message} (status={status})")
 		self.status = status
@@ -36,6 +37,7 @@ class ApiResponseError(ApiError):
 
 
 class ApiDecodeError(ApiError):
+	"""Failed to decode API response."""
 	def __init__(self, raw: str):
 		super().__init__("Invalid JSON response")
 		self.raw = raw
@@ -43,12 +45,14 @@ class ApiDecodeError(ApiError):
 
 @dataclass(slots=True)
 class RetryPolicy:
+	"""Configuration for retrying failed API requests."""
 	attempts: int = 3              # total attempts (initial + retries)
 	backoff_base: float = 0.5      # seconds
 	backoff_factor: float = 2.0    # exponential factor
 	retry_statuses: tuple[int, ...] = (500, 502, 503, 504)
 
 	def compute_sleep(self, attempt: int) -> float:
+		"""Compute backoff sleep time for a given attempt number."""
 		# attempt is 1-based (1 = first retry after initial)
 		return self.backoff_base * (self.backoff_factor ** (attempt - 1))
 
@@ -85,6 +89,7 @@ class SimpleRateLimiter:
 
 
 class PuddleApiClient:
+	"""Puddle API client."""
 	def __init__(
 		self,
 		base_url: str = DEFAULT_BASE_URL,
@@ -155,7 +160,8 @@ class PuddleApiClient:
 						body_text = None
 						try:
 							body_text = await resp.text()
-						except Exception as read_err:  # capture but ignore (logging placeholder)
+						except Exception as read_err:  # pylint: disable=broad-except
+							# capture but ignore (logging placeholder)
 							body_text = f"<unreadable body: {read_err}>"
 						raise ApiResponseError(status, body_text)
 					try:
@@ -204,17 +210,8 @@ class PuddleApiClient:
 					return False
 				try:
 					text = await resp.text()
-				except Exception:
+				except Exception:  # pylint: disable=broad-except
 					return False
 				return text.strip() == "OK"
 		except (aiohttp.ClientError, asyncio.TimeoutError, ApiError):
 			return False
-
-__all__ = [
-	"PuddleApiClient",
-	"RetryPolicy",
-	"SimpleRateLimiter",
-	"ApiError",
-	"ApiResponseError",
-	"ApiDecodeError",
-]

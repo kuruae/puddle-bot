@@ -3,7 +3,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from database import Database
-from utils.helpers import calculate_rank, str_elo, to_int
+from utils import calculate_rank, str_elo, to_int
 from api_client import PuddleApiClient, ApiError
 
 MIN_MATCHES = 1
@@ -30,9 +30,13 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 
 		top_defeated = char_data.get("top_defeated")
 		if isinstance(top_defeated, dict) and top_defeated.get("value", 0) > 0:
+			opp_rate_int = to_int(top_defeated.get("rating", 0))
+			opp_rate_display = str_elo(opp_rate_int)
+			# opp_rank = calculate_rank(opp_rate_int)
+			# not using it for now, I feel like it would become too cluttered
 			info_lines.append(
-				f"┗ Meilleure victoire: **{top_defeated.get('name','?')}** "
-				f"({top_defeated.get('char_short','?')}) - {top_defeated.get('value')}"
+				f"┗ Meilleure win: **{top_defeated.get('name','?')}** "
+				f"({top_defeated.get('char_short','?')}) - {opp_rate_display}"
 			)
 
 		return "\n".join(info_lines)

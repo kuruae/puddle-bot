@@ -6,8 +6,7 @@ from discord import app_commands
 from discord.ext import commands
 
 import utils.exceptions as bot_exceptions
-from utils.helpers import verify_char_short, str_elo
-from .base_command import API_BASE_URL
+from utils import verify_char_short, str_elo
 from api_client import PuddleApiClient, ApiError
 
 
@@ -59,7 +58,7 @@ class Leaderboard(commands.Cog, name="Leaderboard"):
 
 	async def _fetch_leaderboard(self, character: str | None = None) -> list[dict]:
 		"""Fetch top players (global or per character) using the API client."""
-		async with PuddleApiClient(base_url=API_BASE_URL) as api:
+		async with PuddleApiClient() as api:
 			try:
 				if character:
 					payload = await api.get_top_char(character)

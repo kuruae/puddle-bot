@@ -12,7 +12,7 @@ import discord
 
 from database import Database
 from api_client import PuddleApiClient, RetryPolicy, SimpleRateLimiter, ApiError
-from utils.helpers import calculate_rank, str_elo, to_int
+from utils import calculate_rank, str_elo, to_int
 
 # Configuration constants
 REQUEST_TIMEOUT = 10               # seconds total per HTTP request

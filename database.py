@@ -6,8 +6,8 @@ and SQLite (local development).
 """
 import os
 import sqlite3
-import psycopg
 import logging
+import psycopg
 from psycopg.rows import dict_row
 
 logging.basicConfig(level=logging.INFO)

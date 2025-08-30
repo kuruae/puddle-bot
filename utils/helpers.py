@@ -1,8 +1,6 @@
 """Helper functions and constants (not a cog)."""
 from typing import Any
-import aiohttp
 import utils.exceptions as bot_exceptions
-from commands.base_command import API_BASE_URL
 
 _CHAR_SHORT_CODES: set[str] = {
 	"SO",  # Sol
@@ -119,9 +117,3 @@ def to_int(value: Any) -> int | None:
 	if isinstance(value, str) and value.isdigit():
 		return int(value)
 	return None
-
-async def is_api_healthy() -> bool:
-	"""Check the health of the API."""
-	async with aiohttp.ClientSession() as session:
-		async with session.get(f"{API_BASE_URL}/health") as response:
-			return response.status == 200

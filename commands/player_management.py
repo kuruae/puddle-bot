@@ -1,12 +1,11 @@
 """
 Player management commands (add, remove, list players)
 """
-import aiohttp
 import discord
 from discord import app_commands
 from discord.ext import commands
 from database import Database
-from .base_command import API_PLAYER_URL
+from api_client import PuddleApiClient, ApiError
 
 
 class PlayerManagement(commands.Cog, name="Player Management"):
@@ -26,21 +25,19 @@ class PlayerManagement(commands.Cog, name="Player Management"):
 		await interaction.response.defer()
 
 		try:
-			# Verify player exists in puddle.farm
-			async with aiohttp.ClientSession() as session:
-				async with session.get(f"{API_PLAYER_URL}/{player_id}") as resp:
-					if resp.status != 200:
-						await interaction.followup.send(
-							f"❌ Joueur ID `{player_id}` introuvable sur puddle.farm"
-						)
-						return
+			async with PuddleApiClient() as api:
+				player = await api.get_player(player_id)
+				if not player:
+					await interaction.followup.send(
+						f"❌ Joueur ID `{player_id}` introuvable sur puddle.farm"
+					)
+					return
 
 			self.db.add_player(player_id, name)
 			await interaction.followup.send(
 				f"✅ Joueur **{name}** (ID: `{player_id}`) ajouté à la surveillance!"
 			)
-
-		except (aiohttp.ClientError, aiohttp.ServerTimeoutError, ValueError) as exc:
+		except (ApiError, ValueError) as exc:
 			await interaction.followup.send(f"❌ Erreur: {exc}")
 
 	@app_commands.command(name="list_players", description="Show all players being tracked")

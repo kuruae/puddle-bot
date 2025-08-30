@@ -5,6 +5,8 @@ This bot tracks Guilty Gear Strive matches from puddle.farm API
 and posts updates to Discord channels.
 """
 import os
+import logging
+import sys
 import asyncio
 import traceback
 import discord
@@ -28,6 +30,23 @@ if not CHANNEL_ID:
 # Constants
 POLL_INTERVAL = int(os.getenv('POLL_INTERVAL', '2'))  # 2 minutes default
 
+logger = logging.getLogger(__name__)
+
+def configure_logging(level: str = "INFO") -> None:
+	"""
+	Configure root logging once at startup.
+	level: text level (DEBUG/INFO/WARNING/ERROR)
+	"""
+	log_level = getattr(logging, level.upper(), logging.INFO)
+	handler = logging.StreamHandler(sys.stdout)
+	handler.setFormatter(logging.Formatter(
+		"%(asctime)s %(levelname).1s %(name)s: %(message)s",
+		datefmt="%H:%M:%S"
+	))
+	root = logging.getLogger()
+	root.setLevel(log_level)
+	root.handlers.clear()
+	root.addHandler(handler)
 
 class GGSTBot(commands.Bot):
 	"""Main GGST Match Tracker Bot"""
@@ -65,51 +84,51 @@ class GGSTBot(commands.Bot):
 
 		# Log summary
 		if loaded:
-			print("✅ Loaded cogs:")
+			logger.info("✅ Loaded cogs:")
 			for ext in loaded:
-				print(f"  - {ext}")
+				logger.info(' - %s', ext)
 		if failed:
-			print("❌ Failed to load:")
+			logger.error("❌ Failed to load:")
 			for ext, err in failed.items():
-				print(f"  - {ext}: {err}")
+				logger.error(' - %s: %s', ext, err)
 		if not loaded:
-			print("❌ No cogs loaded; aborting command sync")
+			logger.error("❌ No cogs loaded; aborting command sync")
 			return
 
 		# Sync slash commands
 		try:
 			synced = await self.tree.sync()
-			print(f"✅ Synchronized {len(synced)} slash command(s)")
+			logger.info('✅ Synchronized %d slash command(s)', len(synced))
 			for cmd in synced:
-				print(f"  - /{cmd.name}: {cmd.description}")
+				logger.info('  - /%s: %s', cmd.name, cmd.description)
 		except (discord.HTTPException, discord.Forbidden, discord.LoginFailure) as exc:
-			print(f"❌ Failed to sync commands: {exc}")
+			logger.error('❌ Failed to sync commands: %s', exc)
 			traceback.print_exc()
 
 	async def on_ready(self):
 		"""Called when the bot is ready"""
-		print(f"Bot connecté en tant que {self.user}")
-		print(f"Membre de {len(self.guilds)} serveur(s)")
+		logger.info('Bot connecté en tant que %s', self.user)
+		logger.info('Membre de %d serveur(s)', len(self.guilds))
 
 		# Show server and channel info
 		for guild in self.guilds:
-			print(f"Serveur: {guild.name} (ID: {guild.id})")
+			logger.info('Serveur: %s (ID: %d)', guild.name, guild.id)
 
 		# Debug: Show loaded commands
-		print(f"Commandes dans l'arbre: {len(self.tree.get_commands())}")
+		logger.info('Commandes dans l\'arbre: %d', len(self.tree.get_commands()))
 		for cmd in self.tree.get_commands():
-			print(f"  - /{cmd.name}")
+			logger.info('  - /%s', cmd.name)
 
 		channel = self.get_channel(CHANNEL_ID)
 		if channel:
-			print(f"Canal cible: #{channel.name} dans {channel.guild.name}")
+			logger.info('Canal cible: #%s dans %s', channel.name, channel.guild.name)
 		else:
-			print(f"ERREUR: Canal ID {CHANNEL_ID} introuvable!")
+			logger.error('ERREUR: Canal ID %d introuvable!', CHANNEL_ID)
 			return
 
 		# Start polling task
 		if not self.poll_matches.is_running():
-			print("Démarrage de la surveillance des matches...")
+			logger.info("Démarrage de la surveillance des matches...")
 			self.poll_matches.start()
 
 	@tasks.loop(minutes=POLL_INTERVAL)
@@ -118,12 +137,12 @@ class GGSTBot(commands.Bot):
 		await self.wait_until_ready()
 
 		if not self.guilds:
-			print("ERREUR: Le bot n'est membre d'aucun serveur Discord!")
+			logger.error("ERREUR: Le bot n'est membre d'aucun serveur Discord!")
 			return
 
 		channel = self.get_channel(CHANNEL_ID)
 		if channel is None:
-			print(f"ERREUR: Impossible de récupérer le channel ID {CHANNEL_ID}.")
+			logger.error('ERREUR: Impossible de récupérer le channel ID %d.', CHANNEL_ID)
 			return
 
 		await self.match_tracker.poll_all_players(channel)
@@ -131,14 +150,15 @@ class GGSTBot(commands.Bot):
 
 async def main():
 	"""Main entry point"""
+	configure_logging()
 	bot = GGSTBot()
 
 	try:
 		await bot.start(DISCORD_TOKEN)
 	except KeyboardInterrupt:
-		print("\n🛑 Bot arrêté par l'utilisateur")
+		logging.info("\n🛑 Bot arrêté par l'utilisateur")
 	except (discord.LoginFailure, discord.HTTPException, ValueError) as exc:
-		print(f"❌ Erreur fatale: {exc}")
+		logging.critical("❌ Erreur fatale: %s", exc)
 	finally:
 		await bot.close()
 

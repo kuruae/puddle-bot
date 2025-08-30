@@ -1,13 +1,10 @@
-"""
-Player statistics commands
-"""
-import aiohttp
+"""Player statistics commands using the central PuddleApiClient."""
 import discord
 from discord import app_commands
 from discord.ext import commands
 from database import Database
 from utils.helpers import calculate_rank, str_elo, to_int
-from .base_command import API_PLAYER_URL, API_BASE_URL
+from api_client import PuddleApiClient, ApiError
 
 MIN_MATCHES = 1
 NUMBER_OF_CHARACTERS = 3  # Number of characters to display in stats
@@ -50,12 +47,12 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 		return name_or_id, None
 
 	async def _fetch_player_data(self, player_id: str) -> dict | None:
-		"""Fetch player data from puddle.farm. Returns None if not found."""
-		async with aiohttp.ClientSession() as session:
-			async with session.get(f"{API_PLAYER_URL}/{player_id}") as resp:
-				if resp.status != 200:
-					return None
-				return await resp.json()
+		"""Fetch player data via API client. Returns None if not found."""
+		async with PuddleApiClient() as api:
+			try:
+				return await api.get_player(player_id)
+			except ApiError:
+				return None
 
 	def _filter_and_sort_characters(self, player_data: dict, min_matches: int = MIN_MATCHES) -> list[dict]:
 		"""Return characters with at least min_matches sorted desc by rating."""
@@ -121,17 +118,17 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 			embed = self._build_stats_embed(player_name, player_data)
 			await interaction.followup.send(embed=embed)
 
-		except (aiohttp.ClientError, aiohttp.ServerTimeoutError, ValueError, KeyError) as exc:
+		except (ApiError, ValueError, KeyError) as exc:
 			await interaction.followup.send(f"❌ Erreur: {exc}")
 
 
 	async def get_popularity_request(self) -> dict | None:
-		"""Fetch character popularity data from the API."""
-		async with aiohttp.ClientSession() as session:
-			async with session.get(f"{API_BASE_URL}/popularity") as resp:
-				if resp.status != 200:
-					return None
-				return await resp.json()
+		"""Fetch character popularity data via API client."""
+		async with PuddleApiClient() as api:
+			try:
+				return await api.get_popularity()
+			except ApiError:
+				return None
 
 	@app_commands.command(name="distribution", description="Display character distribution"
 							" across the past month")
@@ -168,7 +165,7 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 				text=f"Total joueurs: {total} • puddle.farm • {data.get('last_update', '?')}"
 			)
 			await interaction.followup.send(embed=embed)
-		except (aiohttp.ClientError, aiohttp.ServerTimeoutError, ValueError, KeyError) as e:
+		except (ApiError, ValueError, KeyError) as e:
 			await interaction.followup.send(f"❌ Erreur interne distribution: {e}")
 
 

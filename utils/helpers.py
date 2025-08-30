@@ -1,5 +1,8 @@
 """Helper functions and constants (not a cog)."""
 from typing import Any
+import functools
+import inspect
+import logging
 import utils.exceptions as bot_exceptions
 
 _CHAR_SHORT_CODES: set[str] = {
@@ -117,3 +120,23 @@ def to_int(value: Any) -> int | None:
 	if isinstance(value, str) and value.isdigit():
 		return int(value)
 	return None
+
+def debug_logging_decorator(func):
+	"""Decorator to log async function calls and errors."""
+	logger = logging.getLogger(func.__module__)  # or __name__ if you prefer the decorator's module
+
+	if inspect.iscoroutinefunction(func):
+		@functools.wraps(func)
+		async def wrapper(*args, **kwargs):
+			logger.debug("Calling %s.%s args=%r kwargs=%r", func.__module__, func.__qualname__, args, kwargs)
+			result = await func(*args, **kwargs)
+			logger.debug("Returning %s.%s -> %r", func.__module__, func.__qualname__, result)
+			return result
+	else:
+		@functools.wraps(func)
+		def wrapper(*args, **kwargs):
+			logger.debug("Calling %s.%s args=%r kwargs=%r", func.__module__, func.__qualname__, args, kwargs)
+			result = func(*args, **kwargs)
+			logger.debug("Returning %s.%s -> %r", func.__module__, func.__qualname__, result)
+			return result
+	return wrapper

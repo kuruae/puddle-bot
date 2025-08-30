@@ -64,7 +64,7 @@ class Leaderboard(commands.Cog, name="Leaderboard"):
 					payload = await api.get_top_char(character)
 				else:
 					payload = await api.get_top()
-			except (ApiError):
+			except ApiError:
 				return []
 
 		if not payload:

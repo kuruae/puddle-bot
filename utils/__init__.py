@@ -6,6 +6,7 @@ from utils.helpers import (
 	calculate_rank,
 	str_elo,
 	to_int,
+	debug_logging_decorator,
 )
 
 __all__ = [
@@ -13,4 +14,5 @@ __all__ = [
 	"calculate_rank",
 	"str_elo",
 	"to_int",
+	"debug_logging_decorator",
 ]

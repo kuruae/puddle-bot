@@ -165,7 +165,11 @@ class MatchTracker:
 
 		return len(new_matches_list)
 
-	async def check_player(self, api: PuddleApiClient, channel: discord.TextChannel, name: str, player_id: str) -> None:
+	async def check_player(self,
+							api: PuddleApiClient,
+							channel: discord.TextChannel,
+							name: str,
+							player_id: str) -> None:
 		"""Check a player's recent matches"""
 		try:
 			player_data = await api.get_player(player_id)

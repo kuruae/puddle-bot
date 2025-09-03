@@ -150,7 +150,7 @@ class GGSTBot(commands.Bot):
 
 async def main():
 	"""Main entry point"""
-	configure_logging()
+	configure_logging("INFO")
 	bot = GGSTBot()
 
 	try:

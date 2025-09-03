@@ -3,11 +3,14 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from database import Database
-from utils import calculate_rank, str_elo, to_int
+import logging
+from utils import calculate_rank, str_elo, to_int, debug_logging_decorator
 from api_client import PuddleApiClient, ApiError
 
 MIN_MATCHES = 1
 NUMBER_OF_CHARACTERS = 3  # Number of characters to display in stats
+
+log = logging.getLogger(__name__)
 
 class PlayerStats(commands.Cog, name="Player Stats"):
 	"""Commands for viewing player statistics"""
@@ -16,11 +19,13 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 		self.bot = bot
 		self.db: Database = bot.db
 
+	@debug_logging_decorator
 	def _format_character_info(self, char_data: dict) -> str:
 		"""Helper function to format a single character's information"""
 		char_name = char_data["character"]
 		rating_int = to_int(char_data.get("rating", 0)) or 0
 		rating_display = str_elo(rating_int)
+		log.debug("rating int = %s\nrating display = %s", rating_int, rating_display)
 		match_count = char_data.get("match_count", 0)
 
 		info_lines = [f"**{char_name}**: {rating_display} - {calculate_rank(rating_int)} ({match_count} matches)"]
@@ -30,8 +35,9 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 
 		top_defeated = char_data.get("top_defeated")
 		if isinstance(top_defeated, dict) and top_defeated.get("value", 0) > 0:
-			opp_rate_int = to_int(top_defeated.get("rating", 0))
+			opp_rate_int = to_int(top_defeated.get("value", 0))
 			opp_rate_display = str_elo(opp_rate_int)
+			log.debug("opp_rate int = %s\nopp_rate display = %s", opp_rate_int, opp_rate_display)
 			# opp_rank = calculate_rank(opp_rate_int)
 			# not using it for now, I feel like it would become too cluttered
 			info_lines.append(

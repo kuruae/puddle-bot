@@ -1,9 +1,9 @@
 """Player statistics commands using the central PuddleApiClient."""
+import logging
 import discord
 from discord import app_commands
 from discord.ext import commands
 from database import Database
-import logging
 from utils import calculate_rank, str_elo, to_int, debug_logging_decorator
 from api_client import PuddleApiClient, ApiError
 

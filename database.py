@@ -6,9 +6,12 @@ and SQLite (local development).
 """
 import os
 import sqlite3
+import logging
 import psycopg
 from psycopg.rows import dict_row
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class Database:
 	"""Database handler with support for PostgreSQL and SQLite"""
@@ -30,9 +33,9 @@ class Database:
 					database_url, row_factory=dict_row
 				)
 				self.is_postgres = True
-				print("✅ Connected to PostgreSQL database")
+				logger.info("✅ Connected to PostgreSQL database")
 			except Exception as exc:
-				print(f"❌ PostgreSQL connection failed: {exc}")
+				logger.error("❌ PostgreSQL connection failed: %s", exc)
 				raise
 		else:
 			# Local development: SQLite
@@ -40,9 +43,9 @@ class Database:
 				self.connection = sqlite3.connect('local_bot.db')
 				self.connection.row_factory = sqlite3.Row  # For dict-like access
 				self.is_postgres = False
-				print("✅ Connected to SQLite database (local development)")
+				logger.info("✅ Connected to SQLite database (local development)")
 			except Exception as exc:
-				print(f"❌ SQLite connection failed: {exc}")
+				logger.error("❌ SQLite connection failed: %s", exc)
 				raise
 
 	def setup_tables(self):

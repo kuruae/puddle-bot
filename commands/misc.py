@@ -5,7 +5,7 @@ import os
 import discord
 from discord import app_commands
 from discord.ext import commands
-from utils.helpers import is_api_healthy
+from api_client import PuddleApiClient
 from .base_command import is_owner
 
 RED = 0xFF0000
@@ -101,23 +101,17 @@ class Miscellaneous(commands.Cog, name="Miscellaneous"):
 
 	@app_commands.command(name="health", description="Checks API health")
 	async def health_check(self, interaction: discord.Interaction):
-		"""Check API health"""
-
-		color_to_apply = RED
-		status_message = "API health check failed."
-		check = await is_api_healthy()
-
-		if check:
-			color_to_apply = GREEN
-			status_message = "OK ✅"
-
-		embed = discord.Embed(
-			title="API Health Check",
-			color=color_to_apply
-		)
-		embed.add_field(name="Status", value=status_message, inline=False)
-
-		await interaction.response.send_message(embed=embed)
+		"""Check API health using the centralized API client."""
+		await interaction.response.defer(ephemeral=True)
+		color = RED
+		status = "API health check failed."
+		async with PuddleApiClient() as api:
+			if await api.health():
+				color = GREEN
+				status = "OK ✅"
+		embed = discord.Embed(title="API Health Check", color=color)
+		embed.add_field(name="Status", value=status, inline=False)
+		await interaction.followup.send(embed=embed)
 
 
 async def setup(bot):

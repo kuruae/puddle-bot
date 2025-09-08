@@ -1,15 +1,13 @@
 """
 Leaderboard commands with pagination
 """
-import aiohttp
 import discord
 from discord import app_commands
 from discord.ext import commands
 
 import utils.exceptions as bot_exceptions
-from utils.helpers import verify_char_short
-from utils.helpers import str_elo
-from .base_command import API_BASE_URL
+from utils import verify_char_short, str_elo
+from api_client import PuddleApiClient, ApiError
 
 
 class LeaderboardView(discord.ui.View):
@@ -59,25 +57,23 @@ class Leaderboard(commands.Cog, name="Leaderboard"):
 		self.bot = bot
 
 	async def _fetch_leaderboard(self, character: str | None = None) -> list[dict]:
-		"""Fetch top players from puddle.farm, optionally filtered by character."""
-		if character:
-			url = f"{API_BASE_URL}/top_char/{character}"
-		else:
-			url = f"{API_BASE_URL}/top"
+		"""Fetch top players (global or per character) using the API client."""
+		async with PuddleApiClient() as api:
+			try:
+				if character:
+					payload = await api.get_top_char(character)
+				else:
+					payload = await api.get_top()
+			except ApiError:
+				return []
 
-		async with aiohttp.ClientSession() as session:
-			async with session.get(url) as resp:
-				if resp.status != 200:
-					return []
-				payload = await resp.json()
-
-		# API currently returns {"ranks": [...]} – normalize to list
+		if not payload:
+			return []
 		if isinstance(payload, list):
 			return payload
 		if isinstance(payload, dict):
 			if isinstance(payload.get("ranks"), list):
 				return payload["ranks"]
-			# Fallback: first list value inside dict
 			for val in payload.values():
 				if isinstance(val, list):
 					return val
@@ -140,8 +136,8 @@ class Leaderboard(commands.Cog, name="Leaderboard"):
 			await interaction.followup.send(embed=pages[0], view=view)
 		except bot_exceptions.CharNotFound as e:
 			await interaction.followup.send(f"❌ {e}. Use ``/help characters`` to get all short codes.")
-		except (aiohttp.ClientError, aiohttp.ServerTimeoutError) as exc:
-			await interaction.followup.send(f"❌ Erreur de récupération du classement: {exc}")
+		except ApiError as exc:
+			await interaction.followup.send(f"❌ Erreur API classement: {exc}")
 
 
 async def setup(bot):

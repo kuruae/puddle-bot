@@ -1,16 +1,16 @@
-"""
-Player statistics commands
-"""
-import aiohttp
+"""Player statistics commands using the central PuddleApiClient."""
+import logging
 import discord
 from discord import app_commands
 from discord.ext import commands
 from database import Database
-from utils.helpers import calculate_rank, str_elo, to_int
-from .base_command import API_PLAYER_URL, API_BASE_URL
+from utils import calculate_rank, str_elo, to_int, debug_logging_decorator
+from api_client import PuddleApiClient, ApiError
 
 MIN_MATCHES = 1
 NUMBER_OF_CHARACTERS = 3  # Number of characters to display in stats
+
+log = logging.getLogger(__name__)
 
 class PlayerStats(commands.Cog, name="Player Stats"):
 	"""Commands for viewing player statistics"""
@@ -19,11 +19,13 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 		self.bot = bot
 		self.db: Database = bot.db
 
+	@debug_logging_decorator
 	def _format_character_info(self, char_data: dict) -> str:
 		"""Helper function to format a single character's information"""
 		char_name = char_data["character"]
 		rating_int = to_int(char_data.get("rating", 0)) or 0
 		rating_display = str_elo(rating_int)
+		log.debug("rating int = %s\nrating display = %s", rating_int, rating_display)
 		match_count = char_data.get("match_count", 0)
 
 		info_lines = [f"**{char_name}**: {rating_display} - {calculate_rank(rating_int)} ({match_count} matches)"]
@@ -33,9 +35,14 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 
 		top_defeated = char_data.get("top_defeated")
 		if isinstance(top_defeated, dict) and top_defeated.get("value", 0) > 0:
+			opp_rate_int = to_int(top_defeated.get("value", 0))
+			opp_rate_display = str_elo(opp_rate_int)
+			log.debug("opp_rate int = %s\nopp_rate display = %s", opp_rate_int, opp_rate_display)
+			# opp_rank = calculate_rank(opp_rate_int)
+			# not using it for now, I feel like it would become too cluttered
 			info_lines.append(
-				f"┗ Meilleure victoire: **{top_defeated.get('name','?')}** "
-				f"({top_defeated.get('char_short','?')}) - {top_defeated.get('value')}"
+				f"┗ Meilleure win: **{top_defeated.get('name','?')}** "
+				f"({top_defeated.get('char_short','?')}) - {opp_rate_display}"
 			)
 
 		return "\n".join(info_lines)
@@ -50,12 +57,12 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 		return name_or_id, None
 
 	async def _fetch_player_data(self, player_id: str) -> dict | None:
-		"""Fetch player data from puddle.farm. Returns None if not found."""
-		async with aiohttp.ClientSession() as session:
-			async with session.get(f"{API_PLAYER_URL}/{player_id}") as resp:
-				if resp.status != 200:
-					return None
-				return await resp.json()
+		"""Fetch player data via API client. Returns None if not found."""
+		async with PuddleApiClient() as api:
+			try:
+				return await api.get_player(player_id)
+			except ApiError:
+				return None
 
 	def _filter_and_sort_characters(self, player_data: dict, min_matches: int = MIN_MATCHES) -> list[dict]:
 		"""Return characters with at least min_matches sorted desc by rating."""
@@ -121,17 +128,17 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 			embed = self._build_stats_embed(player_name, player_data)
 			await interaction.followup.send(embed=embed)
 
-		except (aiohttp.ClientError, aiohttp.ServerTimeoutError, ValueError, KeyError) as exc:
+		except (ApiError, ValueError, KeyError) as exc:
 			await interaction.followup.send(f"❌ Erreur: {exc}")
 
 
 	async def get_popularity_request(self) -> dict | None:
-		"""Fetch character popularity data from the API."""
-		async with aiohttp.ClientSession() as session:
-			async with session.get(f"{API_BASE_URL}/popularity") as resp:
-				if resp.status != 200:
-					return None
-				return await resp.json()
+		"""Fetch character popularity data via API client."""
+		async with PuddleApiClient() as api:
+			try:
+				return await api.get_popularity()
+			except ApiError:
+				return None
 
 	@app_commands.command(name="distribution", description="Display character distribution"
 							" across the past month")
@@ -168,7 +175,7 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 				text=f"Total joueurs: {total} • puddle.farm • {data.get('last_update', '?')}"
 			)
 			await interaction.followup.send(embed=embed)
-		except (aiohttp.ClientError, aiohttp.ServerTimeoutError, ValueError, KeyError) as e:
+		except (ApiError, ValueError, KeyError) as e:
 			await interaction.followup.send(f"❌ Erreur interne distribution: {e}")
 
 

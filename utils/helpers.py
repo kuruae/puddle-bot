@@ -1,8 +1,9 @@
 """Helper functions and constants (not a cog)."""
 from typing import Any
-import aiohttp
+import functools
+import inspect
+import logging
 import utils.exceptions as bot_exceptions
-from commands.base_command import API_BASE_URL
 
 _CHAR_SHORT_CODES: set[str] = {
 	"SO",  # Sol
@@ -120,8 +121,22 @@ def to_int(value: Any) -> int | None:
 		return int(value)
 	return None
 
-async def is_api_healthy() -> bool:
-	"""Check the health of the API."""
-	async with aiohttp.ClientSession() as session:
-		async with session.get(f"{API_BASE_URL}/health") as response:
-			return response.status == 200
+def debug_logging_decorator(func):
+	"""Decorator to log async function calls and errors."""
+	logger = logging.getLogger(func.__module__)  # or __name__ if you prefer the decorator's module
+
+	if inspect.iscoroutinefunction(func):
+		@functools.wraps(func)
+		async def wrapper(*args, **kwargs):
+			logger.debug("Calling %s.%s args=%r kwargs=%r", func.__module__, func.__qualname__, args, kwargs)
+			result = await func(*args, **kwargs)
+			logger.debug("Returning %s.%s -> %r", func.__module__, func.__qualname__, result)
+			return result
+	else:
+		@functools.wraps(func)
+		def wrapper(*args, **kwargs):
+			logger.debug("Calling %s.%s args=%r kwargs=%r", func.__module__, func.__qualname__, args, kwargs)
+			result = func(*args, **kwargs)
+			logger.debug("Returning %s.%s -> %r", func.__module__, func.__qualname__, result)
+			return result
+	return wrapper

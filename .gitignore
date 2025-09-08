@@ -1,6 +1,7 @@
 # Configuration files with sensitive data
 config.py
 .env
+*.uv
 
 # Bot data files
 cache.json

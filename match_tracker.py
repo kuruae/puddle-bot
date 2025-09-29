@@ -58,13 +58,15 @@ class MatchTracker:
 		if result == "win":
 			embed = discord.Embed(
 				title=t("tracker.match.win.title"),
-				description=t("tracker.match.win.description", name=name, char=char, opponent=opponent, opponent_char=opponent_char),
+				description=t("tracker.match.win.description",
+					name=name, char=char, opponent=opponent, opponent_char=opponent_char),
 				color=COLOR_WIN
 			)
 		else:
 			embed = discord.Embed(
 				title=t("tracker.match.loss.title"),
-				description=t("tracker.match.loss.description", name=name, char=char, opponent=opponent, opponent_char=opponent_char),
+				description=t("tracker.match.loss.description",
+					name=name, char=char, opponent=opponent, opponent_char=opponent_char),
 				color=COLOR_LOSS
 			)
 

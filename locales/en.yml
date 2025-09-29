@@ -1,0 +1,24 @@
+help:
+  title: "Puddle Bot"
+  description: "Bot that watches GGST matches on puddle.farm"
+  commands_block: |
+    `/add_player <id> <name>` - Add a player
+    `/list_players` - List tracked players
+    `/remove_player <name>` - Remove a player
+    `/stats <name>/<id>` - Player statistics
+    `/top [character]` - Player leaderboard
+    `/help` - Show this help
+  info_field_name: "Information"
+info:
+  auto_check: "The bot automatically checks for new matches every {interval} minutes."
+health:
+  title: "API Health Check"
+  status_field: "Status"
+  ok: "OK ✅"
+  fail: "API health check failed."
+errors:
+  hugo_id_missing: "❌ HUGO_USER_ID is not configured."
+fun:
+  hugo_title: "🥏 Millia Oki Disk"
+  hugo_description: "Block this if you can"
+  hugo_message: "<@{user_id}> you loser"

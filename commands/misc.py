@@ -5,6 +5,7 @@ import os
 import discord
 from discord import app_commands
 from discord.ext import commands
+from i18n import t
 from api_client import PuddleApiClient
 from .base_command import is_owner
 
@@ -21,28 +22,22 @@ class Miscellaneous(commands.Cog, name="Miscellaneous"):
 	async def help_command(self, interaction: discord.Interaction, option: str | None = None):
 		"""Show help information"""
 		str(option)
+		# Use global default locale (from LANG env) via i18n singleton.
 		embed = discord.Embed(
-			title="Puddle Bot",
-			description="Bot qui surveille les matches GGST sur puddle.farm",
+			title=t("help.title"),
+			description=t("help.description"),
 			color=0x0099FF
 		)
 
 		embed.add_field(
-			name="📋 Commandes",
-			value=(
-				"`/add_player <id> <nom>` - Ajouter un joueur\n"
-				"`/list_players` - Liste des joueurs surveillés\n"
-				"`/remove_player <nom>` - Retirer un joueur\n"
-				"`/stats <nom>/<id>` - Statistiques d'un joueur\n"
-				"`/top [personnage]` - Classement des joueurs\n"
-				"`/help` - Afficher cette aide"
-			),
+			name="📋 Commandes",  # keeping emoji + label static for now; could localize later
+			value=t("help.commands_block"),
 			inline=False
 		)
 
 		embed.add_field(
-			name="Informations",
-			value="Le bot vérifie automatiquement les nouveaux matches toutes les 2 minutes.",
+			name=t("help.info_field_name"),
+			value=t("info.auto_check", interval=2),
 			inline=False
 		)
 
@@ -57,16 +52,16 @@ class Miscellaneous(commands.Cog, name="Miscellaneous"):
 
 		if not hugo_id:
 			await interaction.response.send_message(
-				"❌ HUGO_USER_ID n'est pas configuré.", 
+				t("errors.hugo_id_missing"),
 				ephemeral=True
 			)
 			return
 
-		message_content = f"<@{hugo_id}> sale loser"
+		message_content = t("fun.hugo_message", user_id=hugo_id)
 
 		embed = discord.Embed(
-			title="🥏 Millia Oki Disk",
-			description="bloques ça pour voir",
+			title=t("fun.hugo_title"),
+			description=t("fun.hugo_description"),
 			color=0xFF69B4
 		)
 
@@ -104,13 +99,13 @@ class Miscellaneous(commands.Cog, name="Miscellaneous"):
 		"""Check API health using the centralized API client."""
 		await interaction.response.defer(ephemeral=True)
 		color = RED
-		status = "API health check failed."
+		status = t("health.fail")
 		async with PuddleApiClient() as api:
 			if await api.health():
 				color = GREEN
-				status = "OK ✅"
-		embed = discord.Embed(title="API Health Check", color=color)
-		embed.add_field(name="Status", value=status, inline=False)
+				status = t("health.ok")
+		embed = discord.Embed(title=t("health.title"), color=color)
+		embed.add_field(name=t("health.status_field"), value=status, inline=False)
 		await interaction.followup.send(embed=embed)
 
 

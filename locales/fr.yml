@@ -1,0 +1,24 @@
+help:
+  title: "Puddle Bot"
+  description: "Bot qui surveille les matches GGST sur puddle.farm"
+  commands_block: |
+    `/add_player <id> <nom>` - Ajouter un joueur
+    `/list_players` - Liste des joueurs surveillés
+    `/remove_player <nom>` - Retirer un joueur
+    `/stats <nom>/<id>` - Statistiques d'un joueur
+    `/top [personnage]` - Classement des joueurs
+    `/help` - Afficher cette aide
+  info_field_name: "Informations"
+info:
+  auto_check: "Le bot vérifie automatiquement les nouveaux matches toutes les {interval} minutes."
+health:
+  title: "Vérification API"
+  status_field: "Statut"
+  ok: "OK ✅"
+  fail: "Échec de la vérification de l'API."
+errors:
+  hugo_id_missing: "❌ HUGO_USER_ID n'est pas configuré."
+fun:
+  hugo_title: "🥏 Millia Oki Disk"
+  hugo_description: "bloques ça pour voir"
+  hugo_message: "<@{user_id}> sale loser"

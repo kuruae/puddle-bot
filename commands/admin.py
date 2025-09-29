@@ -12,6 +12,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from i18n import t
 from .base_command import is_owner
 
 LOG_FILE_ENV: str = "BOT_LOG_FILE"
@@ -31,7 +32,7 @@ class Admin(commands.Cog, name="Admin"):
 	async def ping(self, interaction: discord.Interaction) -> None:
 		"""Reply with the current websocket latency in milliseconds."""
 		latency_ms = round(self.bot.latency * 1000, 1) if self.bot.latency else 0
-		await interaction.response.send_message(f"🏓 Pong! Latence: {latency_ms} ms")
+		await interaction.response.send_message(t("admin.ping", ms=latency_ms))
 
 	@app_commands.command(name="reload", description="Reload all loaded cogs")
 	@is_owner()
@@ -60,7 +61,7 @@ class Admin(commands.Cog, name="Admin"):
 	@is_owner()
 	async def shutdown(self, interaction: discord.Interaction) -> None:
 		"""Close the Discord connection and terminate the process."""
-		await interaction.response.send_message("Arrêt du bot...", ephemeral=True)
+		await interaction.response.send_message(t("admin.shutdown"), ephemeral=True)
 		await self.bot.close()
 
 	@app_commands.command(name="logs", description="Show recent log lines")
@@ -72,7 +73,7 @@ class Admin(commands.Cog, name="Admin"):
 		log_path = os.getenv(LOG_FILE_ENV)
 		if not log_path or not os.path.isfile(log_path):
 			await interaction.followup.send(
-				f"Fichier de log introuvable (variable {LOG_FILE_ENV} manquante ou invalide).",
+				t("admin.logs.missing", env_var=LOG_FILE_ENV),
 				ephemeral=True,
 			)
 			return
@@ -80,7 +81,7 @@ class Admin(commands.Cog, name="Admin"):
 			with open(log_path, "r", encoding="utf-8") as fp:
 				recent_lines: List[str] = fp.readlines()[-lines:]
 		except OSError as err:
-			await interaction.followup.send(f"Erreur d'accès log: {err}", ephemeral=True)
+			await interaction.followup.send(t("admin.logs.access_error", error=err), ephemeral=True)
 			return
 
 		text = "".join(recent_lines)
@@ -90,7 +91,8 @@ class Admin(commands.Cog, name="Admin"):
 		else:
 			buffer = io.StringIO(text)
 			await interaction.followup.send(
-				content=f"Dernières {lines} lignes", file=discord.File(buffer, filename="logs.txt"), ephemeral=True
+				content=t("admin.logs.lines_title", lines=lines),
+					file=discord.File(buffer, filename="logs.txt"), ephemeral=True
 			)
 
 	@app_commands.command(name="eval", description="Execute Python code (owner only)")
@@ -177,14 +179,14 @@ class Admin(commands.Cog, name="Admin"):
 
 		except asyncio.TimeoutError:
 			await interaction.followup.send(
-				f"⏰ Code execution timed out after {EVAL_TIMEOUT} seconds",
+				t("admin.eval.timeout", seconds=EVAL_TIMEOUT),
 				ephemeral=True
 			)
 			return
 
 		except SyntaxError as err:
 			await interaction.followup.send(
-				f"❌ Syntax Error: `{err}`\nLine {err.lineno}: {err.text}",
+				t("admin.eval.syntax_error", error=err, line=err.lineno, line_text=err.text),
 				ephemeral=True
 			)
 			return
@@ -209,7 +211,7 @@ class Admin(commands.Cog, name="Admin"):
 				cleaned_tb = "...\n" + cleaned_tb
 
 			await interaction.followup.send(
-				f"❌ **Error:**\n```py\n{cleaned_tb}\n```",
+				f"{t('admin.eval.error_header')}\n```py\n{cleaned_tb}\n```",
 				ephemeral=True
 			)
 			return
@@ -230,7 +232,7 @@ class Admin(commands.Cog, name="Admin"):
 			response_parts.append(f"**Output:**\n```\n{print_output}\n```")
 
 		if not response_parts:
-			response_parts.append("✅ Code executed successfully (no output)")
+			response_parts.append(t("admin.eval.success_no_output"))
 
 		# Send response (may need to split if too long)
 		full_response = "\n\n".join(response_parts)
@@ -239,7 +241,7 @@ class Admin(commands.Cog, name="Admin"):
 			# Send as file if too long
 			buffer = io.StringIO(full_response)
 			await interaction.followup.send(
-				"✅ Code executed (output too long, sent as file):",
+				 t("admin.eval.output_too_long"),
 				file=discord.File(buffer, filename="eval_output.txt"),
 				ephemeral=False
 			)

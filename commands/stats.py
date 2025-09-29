@@ -6,6 +6,7 @@ from discord.ext import commands
 from database import Database
 from utils import calculate_rank, str_elo, to_int, debug_logging_decorator
 from api_client import PuddleApiClient, ApiError
+from i18n import t
 
 MIN_MATCHES = 1
 NUMBER_OF_CHARACTERS = 3  # Number of characters to display in stats
@@ -73,14 +74,14 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 	def _build_stats_embed(self, player_name: str, player_data: dict) -> discord.Embed:
 		"""Construct the statistics embed from player data."""
 		embed = discord.Embed(
-			title=f"🤓☝️ Statistiques de {player_name}",
+			title=t("stats.title", player=player_name),
 			color=0x0099FF
 		)
 
 		# Global ranking
 		if player_data.get("top_global", 0) > 0:
 			embed.add_field(
-				name="🏆 Classement Global",
+				name=t("stats.global_rank.name"),
 				value=f"#{player_data['top_global']}",
 				inline=False
 			)
@@ -90,14 +91,14 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 		if sorted_chars:
 			for i, char in enumerate(sorted_chars[:NUMBER_OF_CHARACTERS], 1):
 				embed.add_field(
-					name=f"Personnage #{i}",
+					name=t("stats.character_slot.name", index=i),
 					value=self._format_character_info(char),
 					inline=False
 				)
 		else:
 			embed.add_field(
-				name="Personnages",
-				value=f"Aucun personnage avec {MIN_MATCHES}+ matches",
+				name=t("stats.characters_section.name"),
+				value=t("stats.characters_section.none", min_matches=MIN_MATCHES),
 				inline=False
 			)
 
@@ -118,7 +119,7 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 			player_data = await self._fetch_player_data(player_id)
 			if not player_data:
 				await interaction.followup.send(
-					f"❌ Joueur `{name_or_id}` introuvable sur puddle.farm"
+					t("stats.player_not_found", identifier=name_or_id)
 				)
 				return
 
@@ -129,7 +130,7 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 			await interaction.followup.send(embed=embed)
 
 		except (ApiError, ValueError, KeyError) as exc:
-			await interaction.followup.send(f"❌ Erreur: {exc}")
+			await interaction.followup.send(t("errors.generic", error=exc))
 
 
 	async def get_popularity_request(self) -> dict | None:
@@ -148,7 +149,7 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 		try:
 			data = await self.get_popularity_request()
 			if not data:
-				await interaction.followup.send("❌ Impossible de récupérer les données.")
+				await interaction.followup.send(t("stats.distribution.fetch_fail"))
 				return
 
 			per_player_list = data.get("per_player", [])
@@ -158,25 +159,25 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 
 			lines: list[str] = []
 			for _rank, entry in enumerate(per_player_list, 1):
-				name = entry.get("name", "Inconnu")
+				name = entry.get("name", "?")
 				count = entry.get("value", 0)
 				pct = (count / total * 100) if total else 0
 
-				lines.append(f"**{name}** — {count} joueurs ({pct:.2f}%)")
+				lines.append(t("stats.distribution.line", name=name, count=count, pct=pct))
 
 			description = "\n".join(lines)
 
 			embed = discord.Embed(
-				title="Distribution des Personnages (Players)",
+				title=t("stats.distribution.title"),
 				description=description,
 				color=0x0099FF
 			)
 			embed.set_footer(
-				text=f"Total joueurs: {total} • puddle.farm • {data.get('last_update', '?')}"
+				text=t("stats.distribution.footer", total=total, last_update=data.get('last_update', '?'))
 			)
 			await interaction.followup.send(embed=embed)
 		except (ApiError, ValueError, KeyError) as e:
-			await interaction.followup.send(f"❌ Erreur interne distribution: {e}")
+			await interaction.followup.send(t("stats.distribution.internal_error", error=e))
 
 
 async def setup(bot):

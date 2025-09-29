@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 
 from database import Database
 from match_tracker import MatchTracker
+from i18n import t
 
 #API source: https://github.com/nemasu/puddle-farm/blob/master/api.yaml
 
@@ -84,51 +85,51 @@ class GGSTBot(commands.Bot):
 
 		# Log summary
 		if loaded:
-			logger.info("✅ Loaded cogs:")
+			logger.info(t("bot.cogs.loaded.header"))
 			for ext in loaded:
-				logger.info(' - %s', ext)
+				logger.info(t("bot.cogs.loaded.item"), ext)
 		if failed:
-			logger.error("❌ Failed to load:")
+			logger.error(t("bot.cogs.failed.header"))
 			for ext, err in failed.items():
-				logger.error(' - %s: %s', ext, err)
+				logger.error(t("bot.cogs.failed.item"), ext, err)
 		if not loaded:
-			logger.error("❌ No cogs loaded; aborting command sync")
+			logger.error(t("bot.cogs.none"))
 			return
 
 		# Sync slash commands
 		try:
 			synced = await self.tree.sync()
-			logger.info('✅ Synchronized %d slash command(s)', len(synced))
+			logger.info(t("bot.commands.synced"), len(synced))
 			for cmd in synced:
-				logger.info('  - /%s: %s', cmd.name, cmd.description)
+				logger.info(t("bot.commands.synced.item"), cmd.name, cmd.description)
 		except (discord.HTTPException, discord.Forbidden, discord.LoginFailure) as exc:
-			logger.error('❌ Failed to sync commands: %s', exc)
+			logger.error(t("bot.commands.sync_failed"), exc)
 			traceback.print_exc()
 
 	async def on_ready(self):
 		"""Called when the bot is ready"""
-		logger.info('Bot connecté en tant que %s', self.user)
-		logger.info('Membre de %d serveur(s)', len(self.guilds))
+		logger.info(t("bot.ready.user"), self.user)
+		logger.info(t("bot.ready.guild_count"), len(self.guilds))
 
 		# Show server and channel info
 		for guild in self.guilds:
-			logger.info('Serveur: %s (ID: %d)', guild.name, guild.id)
+			logger.info(t("bot.ready.guild.item"), guild.name, guild.id)
 
 		# Debug: Show loaded commands
-		logger.info('Commandes dans l\'arbre: %d', len(self.tree.get_commands()))
+		logger.info(t("bot.ready.commands.count"), len(self.tree.get_commands()))
 		for cmd in self.tree.get_commands():
-			logger.info('  - /%s', cmd.name)
+			logger.info(t("bot.ready.commands.item"), cmd.name)
 
 		channel = self.get_channel(CHANNEL_ID)
 		if channel:
-			logger.info('Canal cible: #%s dans %s', channel.name, channel.guild.name)
+			logger.info(t("bot.ready.channel"), channel.name, channel.guild.name)
 		else:
-			logger.error('ERREUR: Canal ID %d introuvable!', CHANNEL_ID)
+			logger.error(t("bot.ready.channel_missing"), CHANNEL_ID)
 			return
 
 		# Start polling task
 		if not self.poll_matches.is_running():
-			logger.info("Démarrage de la surveillance des matches...")
+			logger.info(t("bot.matches.starting"))
 			self.poll_matches.start()
 
 	@tasks.loop(minutes=POLL_INTERVAL)
@@ -137,12 +138,12 @@ class GGSTBot(commands.Bot):
 		await self.wait_until_ready()
 
 		if not self.guilds:
-			logger.error("ERREUR: Le bot n'est membre d'aucun serveur Discord!")
+			logger.error(t("bot.matches.no_guilds"))
 			return
 
 		channel = self.get_channel(CHANNEL_ID)
 		if channel is None:
-			logger.error('ERREUR: Impossible de récupérer le channel ID %d.', CHANNEL_ID)
+			logger.error(t("bot.matches.channel_lookup_failed"), CHANNEL_ID)
 			return
 
 		await self.match_tracker.poll_all_players(channel)
@@ -156,9 +157,9 @@ async def main():
 	try:
 		await bot.start(DISCORD_TOKEN)
 	except KeyboardInterrupt:
-		logging.info("\n🛑 Bot arrêté par l'utilisateur")
+		logging.info(t("bot.shutdown.keyboard"))
 	except (discord.LoginFailure, discord.HTTPException, ValueError) as exc:
-		logging.critical("❌ Erreur fatale: %s", exc)
+		logging.critical(t("bot.shutdown.fatal"), exc)
 	finally:
 		await bot.close()
 

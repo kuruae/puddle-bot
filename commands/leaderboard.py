@@ -7,6 +7,7 @@ from discord.ext import commands
 
 import utils.exceptions as bot_exceptions
 from utils import verify_char_short, str_elo
+from i18n import t
 from api_client import PuddleApiClient, ApiError
 
 
@@ -86,15 +87,15 @@ class Leaderboard(commands.Cog, name="Leaderboard"):
 		pages: list[discord.Embed] = []
 		if not data:
 			embed = discord.Embed(
-				title="🏆 Classement",
-				description="Aucune donnée disponible.",
+				title=t("leaderboard.empty.title"),
+				description=t("leaderboard.empty.description"),
 				color=0x0099FF
 			)
 			pages.append(embed)
 			return pages
 
 		total = len(data)
-		title = "🏆 Classement Global" if not character else f"🏆 Classement {character}"
+		title = t("leaderboard.global.title") if not character else t("leaderboard.char.title", character=character)
 		for start in range(0, total, page_size):
 			slice_ = data[start:start + page_size]
 			lines = []
@@ -117,7 +118,7 @@ class Leaderboard(commands.Cog, name="Leaderboard"):
 				description="\n".join(lines) or "(vide)",
 				color=0x0099FF
 			)
-			embed.set_footer(text=f"Page {page_num}/{page_total} • puddle.farm")
+			embed.set_footer(text=t("leaderboard.page.footer", current=page_num, total=page_total))
 			pages.append(embed)
 		return pages
 
@@ -135,9 +136,10 @@ class Leaderboard(commands.Cog, name="Leaderboard"):
 			view = LeaderboardView(pages, interaction.user.id)
 			await interaction.followup.send(embed=pages[0], view=view)
 		except bot_exceptions.CharNotFound as e:
-			await interaction.followup.send(f"❌ {e}. Use ``/help characters`` to get all short codes.")
+			await interaction.followup.send(f"❌ {e}. Use ``/help characters`` to"
+				" get all short codes.")  # not yet localized
 		except ApiError as exc:
-			await interaction.followup.send(f"❌ Erreur API classement: {exc}")
+			await interaction.followup.send(t("leaderboard.error.api", error=exc))
 
 
 async def setup(bot):

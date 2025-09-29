@@ -13,6 +13,7 @@ import discord
 from database import Database
 from api_client import PuddleApiClient, RetryPolicy, SimpleRateLimiter, ApiError
 from utils import calculate_rank, str_elo, to_int
+from i18n import t
 
 # Configuration constants
 REQUEST_TIMEOUT = 10               # seconds total per HTTP request
@@ -56,14 +57,14 @@ class MatchTracker:
 
 		if result == "win":
 			embed = discord.Embed(
-				title="🏆 Victoire!",
-				description=f"**{name}** ({char}) vient de gagner contre **{opponent}** ({opponent_char})",
+				title=t("tracker.match.win.title"),
+				description=t("tracker.match.win.description", name=name, char=char, opponent=opponent, opponent_char=opponent_char),
 				color=COLOR_WIN
 			)
 		else:
 			embed = discord.Embed(
-				title="💀 Défaite",
-				description=f"**{name}** ({char}) vient de perdre contre **{opponent}** ({opponent_char})",
+				title=t("tracker.match.loss.title"),
+				description=t("tracker.match.loss.description", name=name, char=char, opponent=opponent, opponent_char=opponent_char),
 				color=COLOR_LOSS
 			)
 
@@ -75,7 +76,7 @@ class MatchTracker:
 			own_rank = calculate_rank(own_val)
 			embed.add_field(
 				name=name,
-				value=f"Rating: {own_display}\nRang: {own_rank}",
+				value=t("tracker.match.player_field", rating=own_display, rank=own_rank),
 				inline=False
 			)
 
@@ -84,7 +85,7 @@ class MatchTracker:
 			opp_rank = calculate_rank(opp_val)
 			embed.add_field(
 				name=opponent,
-				value=f"Rating: {opp_display}\nRang: {opp_rank}",
+				value=t("tracker.match.player_field", rating=opp_display, rank=opp_rank),
 				inline=False
 			)
 
@@ -107,20 +108,20 @@ class MatchTracker:
 		char_name = char_data.get("character")
 		if not char_short or not char_name:
 			return 0
-		logger.debug("Verif personnage %s (%s) pour %s", char_name, char_short, name)
+		logger.debug(t("tracker.debug.char_check"), char_name, char_short, name)
 
 		char_cache = player_cache.get(char_short, [])
 
 		try:
 			history_data = await api.get_player_history(player_id, char_short)
 		except (aiohttp.ClientError, ApiError) as e:
-			logger.warning("Historique indisponible pour %s (%s): %s", char_name, char_short, e)
+			logger.warning(t("tracker.warn.history_unavailable"), char_name, char_short, e)
 			return 0
 		if not history_data:
 			return 0
 
 		matches = history_data.get("history", [])
-		logger.debug("%d matches trouvés pour %s", len(matches), char_name)
+		logger.debug(t("tracker.debug.matches_found"), len(matches), char_name)
 
 		new_matches_list: list[dict] = []
 		for match in matches[:MATCHES_TO_CHECK]:
@@ -145,7 +146,7 @@ class MatchTracker:
 				'result': result
 			})
 
-			logger.info("Nouveau match: %s (%s) %s vs %s (%s)", name, char, result, opponent, opponent_char)
+			logger.info(t("tracker.info.new_match"), name, char, result, opponent, opponent_char)
 
 		# Send matches in chronological order (oldest first)
 		for match_info in reversed(new_matches_list):
@@ -157,7 +158,7 @@ class MatchTracker:
 				await channel.send(embed=embed)
 				self.db.save_match_to_cache(player_id, char_short, match_info['match_id'])
 			except (discord.HTTPException, discord.Forbidden, discord.NotFound) as e:
-				logger.error("Envoi échoué match %s: %s", match_info.get('match_id'), e)
+				logger.error(t("tracker.error.send_failed"), match_info.get('match_id'), e)
 				continue
 
 		if new_matches_list:
@@ -191,11 +192,11 @@ class MatchTracker:
 			total_new_matches += new_matches
 
 		if total_new_matches > 0:
-			logger.info("%d nouveaux matches pour %s", total_new_matches, name)
+			logger.info(t("tracker.info.total_new"), total_new_matches, name)
 
 	async def poll_all_players(self, channel: discord.TextChannel) -> None:
 		"""Poll all tracked players for new matches"""
-		logger.info("Début cycle de vérification des matches")
+		logger.info(t("tracker.cycle.start"))
 
 		players = self.db.get_all_players()
 		# Create a client per poll cycle; internal session reused across requests then closed.
@@ -206,14 +207,14 @@ class MatchTracker:
 			rate_limiter=self._rate_limiter,
 		) as api:
 			for name, player_id in players.items():
-				logger.info("Vérification de %s (%s)", name, player_id)
+				logger.info(t("tracker.cycle.check_player"), name, player_id)
 				try:
 					await self.check_player(api, channel, name, player_id)
 				except (aiohttp.ClientError, aiohttp.ServerTimeoutError, ApiError) as exc:
-					logger.error("Erreur réseau/API %s: %s", name, exc)
+					logger.error(t("tracker.error.network"), name, exc)
 				except discord.DiscordException as exc:
-					logger.error("Erreur Discord %s: %s", name, exc)
+					logger.error(t("tracker.error.discord"), name, exc)
 				except (KeyError, ValueError, TypeError) as exc:
-					logger.exception("Erreur de traitement %s: %s", name, exc)
+					logger.exception(t("tracker.error.processing"), name, exc)
 
-		logger.info("Cycle de vérification terminé")
+		logger.info(t("tracker.cycle.end"))

@@ -9,16 +9,121 @@ help:
     `/top [character]` - Player leaderboard
     `/help` - Show this help
   info_field_name: "Information"
+
 info:
   auto_check: "The bot automatically checks for new matches every {interval} minutes."
+
 health:
   title: "API Health Check"
   status_field: "Status"
   ok: "OK ✅"
   fail: "API health check failed."
+
 errors:
   hugo_id_missing: "❌ HUGO_USER_ID is not configured."
+
 fun:
   hugo_title: "🥏 Millia Oki Disk"
   hugo_description: "Block this if you can"
   hugo_message: "<@{user_id}> you loser"
+
+admin:
+  ping: "🏓 Pong! Latency: {ms} ms"
+  reload.summary: "🔄 {count} extension(s) reloaded"
+  reload.failures_header: "❌ Failures:"
+
+  shutdown: "Shutting down..."
+
+  logs.missing: "Log file not found (env {env_var} missing or invalid)."
+  logs.access_error: "Log access error: {error}"
+  logs.lines_title: "Last {lines} lines"
+
+  eval.timeout: "⏰ Code execution timed out after {seconds} seconds"
+  eval.syntax_error: "❌ Syntax Error: `{error}`\nLine {line}: {line_text}"
+  eval.error_header: "❌ Error:"
+  eval.success_no_output: "✅ Code executed successfully (no output)"
+  eval.output_too_long: "✅ Code executed (output too long, sent as file):"
+
+players:
+  add.not_found_by_id: "❌ Player ID `{player_id}` not found on puddle.farm"
+  add.added: "✅ Player **{name}** (ID: `{player_id}`) added to tracking!"
+
+  list.none: "No tracked players."
+  list.title: "🎮 Tracked Players"
+
+  remove.not_found: "❌ Player **{name}** not found in the list."
+  remove.removed: "✅ Player **{name}** removed from tracking!"
+
+leaderboard:
+  empty.title: "🏆 Leaderboard"
+  empty.description: "No data available."
+  global.title: "🏆 Global Leaderboard"
+  char.title: "🏆 {character} Leaderboard"
+  page.footer: "Page {current}/{total} • puddle.farm"
+  error.api: "❌ Leaderboard API error: {error}"
+
+stats:
+  title: "🤓☝️ Stats for {player}"
+  global_rank.name: "🏆 Global Rank"
+
+  character_slot.name: "Character #{index}"
+  characters_section.name: "Characters"
+  characters_section.none: "No character with {min_matches}+ matches"
+
+  player_not_found: "❌ Player `{identifier}` not found on puddle.farm"
+
+  distribution.title: "Character Distribution (Players)"
+  distribution.fetch_fail: "❌ Could not fetch distribution data."
+  distribution.line: "**{name}** — {count} players ({pct:.2f}%)"
+  distribution.footer: "Total players: {total} • puddle.farm • {last_update}"
+  distribution.internal_error: "❌ Internal distribution error: {error}"
+
+errors:
+  generic: "❌ Error: {error}"
+
+bot:
+  cogs.loaded.header: "✅ Loaded cogs:"
+  cogs.loaded.item: " - %s"
+  cogs.failed.header: "❌ Failed to load:"
+  cogs.failed.item: " - %s: %s"
+  cogs.none: "❌ No cogs loaded; aborting command sync"
+
+  commands.synced: "✅ Synchronized %d slash command(s)"
+  commands.synced.item: "  - /%s: %s"
+  commands.sync_failed: "❌ Failed to sync commands: %s"
+
+  ready.user: "Bot logged in as %s"
+  ready.guild_count: "Member of %d guild(s)"
+  ready.guild.item: "Guild: %s (ID: %d)"
+  ready.commands.count: "Registered commands: %d"
+  ready.commands.item: "  - /%s"
+  ready.channel: "Target channel: #%s in %s"
+  ready.channel_missing: "ERROR: Channel ID %d not found!"
+
+  matches.starting: "Starting match polling..."
+  matches.no_guilds: "ERROR: Bot is not a member of any Discord guild!"
+  matches.channel_lookup_failed: "ERROR: Could not fetch channel ID %d."
+
+  shutdown.keyboard: "\n🛑 Bot stopped by user"
+  shutdown.fatal: "❌ Fatal error: %s"
+
+tracker:
+  match.win.title: "🏆 Victory!"
+  match.win.description: "**{name}** ({char}) just won against **{opponent}** ({opponent_char})"
+  match.loss.title: "💀 Defeat"
+  match.loss.description: "**{name}** ({char}) just lost to **{opponent}** ({opponent_char})"
+  match.player_field: "Rating: {rating}\nRank: {rank}"
+
+  debug.char_check: "Checking character %s (%s) for %s"
+  warn.history_unavailable: "History unavailable for %s (%s): %s"
+  debug.matches_found: "%d matches found for %s"
+  info.new_match: "New match: %s (%s) %s vs %s (%s)"
+  error.send_failed: "Failed to send match %s: %s"
+  info.total_new: "%d new matches for %s"
+
+  cycle.start: "Starting match verification cycle"
+  cycle.check_player: "Checking %s (%s)"
+  error.network: "Network/API error %s: %s"
+  error.discord: "Discord error %s: %s"
+  error.processing: "Processing error %s: %s"
+  cycle.end: "Match verification cycle complete"

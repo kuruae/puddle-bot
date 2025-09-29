@@ -9,16 +9,122 @@ help:
     `/top [personnage]` - Classement des joueurs
     `/help` - Afficher cette aide
   info_field_name: "Informations"
+
 info:
   auto_check: "Le bot vérifie automatiquement les nouveaux matches toutes les {interval} minutes."
+
 health:
   title: "Vérification API"
   status_field: "Statut"
   ok: "OK ✅"
   fail: "Échec de la vérification de l'API."
+
 errors:
   hugo_id_missing: "❌ HUGO_USER_ID n'est pas configuré."
+
 fun:
   hugo_title: "🥏 Millia Oki Disk"
   hugo_description: "bloques ça pour voir"
   hugo_message: "<@{user_id}> sale loser"
+
+admin:
+  ping: "🏓 Pong! Latence: {ms} ms"
+ 
+  reload.summary: "🔄 {count} extension(s) rechargée(s)"
+  reload.failures_header: "❌ Échecs :"
+ 
+  shutdown: "Arrêt du bot..."
+  
+  logs.missing: "Fichier de log introuvable (variable {env_var} manquante ou invalide)."
+  logs.access_error: "Erreur d'accès log: {error}"
+  logs.lines_title: "Dernières {lines} lignes"
+  
+  eval.timeout: "⏰ Exécution interrompue après {seconds} secondes"
+  eval.syntax_error: "❌ Erreur de syntaxe: `{error}`\nLigne {line}: {line_text}"
+  eval.error_header: "❌ Erreur :"
+  eval.success_no_output: "✅ Code exécuté avec succès (aucune sortie)"
+  eval.output_too_long: "✅ Code exécuté (sortie trop longue, envoyée en fichier) :"
+
+players:
+  add.not_found_by_id: "❌ Joueur ID `{player_id}` introuvable sur puddle.farm"
+  add.added: "✅ Joueur **{name}** (ID: `{player_id}`) ajouté à la surveillance !"
+  
+  list.none: "Aucun joueur surveillé."
+  list.title: "🎮 Joueurs Surveillés"
+  
+  remove.not_found: "❌ Joueur **{name}** non trouvé dans la liste."
+  remove.removed: "✅ Joueur **{name}** retiré de la surveillance !"
+
+leaderboard:
+  empty.title: "🏆 Classement"
+  empty.description: "Aucune donnée disponible."
+  global.title: "🏆 Classement Global"
+  char.title: "🏆 Classement {character}"
+  page.footer: "Page {current}/{total} • puddle.farm"
+  error.api: "❌ Erreur API classement: {error}"
+
+stats:
+  title: "🤓☝️ Statistiques de {player}"
+  global_rank.name: "🏆 Classement Global"
+ 
+  character_slot.name: "Personnage #{index}"
+  characters_section.name: "Personnages"
+  characters_section.none: "Aucun personnage avec {min_matches}+ matches"
+  
+  player_not_found: "❌ Joueur `{identifier}` introuvable sur puddle.farm"
+  
+  distribution.title: "Distribution des Personnages (Players)"
+  distribution.fetch_fail: "❌ Impossible de récupérer les données."
+  distribution.line: "**{name}** — {count} joueurs ({pct:.2f}%)"
+  distribution.footer: "Total joueurs: {total} • puddle.farm • {last_update}"
+  distribution.internal_error: "❌ Erreur interne distribution: {error}"
+
+errors:
+  generic: "❌ Erreur: {error}"
+
+bot:
+  cogs.loaded.header: "✅ Extensions chargées :"
+  cogs.loaded.item: " - %s"
+  cogs.failed.header: "❌ Échec de chargement :"
+  cogs.failed.item: " - %s: %s"
+  cogs.none: "❌ Aucune extension chargée; abandon de la synchro"
+
+  commands.synced: "✅ %d commande(s) slash synchronisée(s)"
+  commands.synced.item: "  - /%s: %s"
+  commands.sync_failed: "❌ Échec de synchro des commandes : %s"
+
+  ready.user: "Bot connecté en tant que %s"
+  ready.guild_count: "Membre de %d serveur(s)"
+  ready.guild.item: "Serveur : %s (ID : %d)"
+  ready.commands.count: "Commandes enregistrées : %d"
+  ready.commands.item: "  - /%s"
+  ready.channel: "Canal cible : #%s dans %s"
+  ready.channel_missing: "ERREUR : Canal ID %d introuvable !"
+
+  matches.starting: "Démarrage de la surveillance des matches..."
+  matches.no_guilds: "ERREUR : Le bot n'est membre d'aucun serveur !"
+  matches.channel_lookup_failed: "ERREUR : Impossible de récupérer le channel ID %d."
+
+  shutdown.keyboard: "\n🛑 Bot arrêté par l'utilisateur"
+  shutdown.fatal: "❌ Erreur fatale : %s"
+
+tracker:
+  match.win.title: "🏆 Victoire!"
+  match.win.description: "**{name}** ({char}) vient de gagner contre **{opponent}** ({opponent_char})"
+  match.loss.title: "💀 Défaite"
+  match.loss.description: "**{name}** ({char}) vient de perdre contre **{opponent}** ({opponent_char})"
+  match.player_field: "Rating: {rating}\nRang: {rank}"
+
+  debug.char_check: "Vérif personnage %s (%s) pour %s"
+  warn.history_unavailable: "Historique indisponible pour %s (%s): %s"
+  debug.matches_found: "%d matches trouvés pour %s"
+  info.new_match: "Nouveau match: %s (%s) %s vs %s (%s)"
+  error.send_failed: "Envoi échoué match %s: %s"
+  info.total_new: "%d nouveaux matches pour %s"
+
+  cycle.start: "Début cycle de vérification des matches"
+  cycle.check_player: "Vérification de %s (%s)"
+  error.network: "Erreur réseau/API %s: %s"
+  error.discord: "Erreur Discord %s: %s"
+  error.processing: "Erreur de traitement %s: %s"
+  cycle.end: "Cycle de vérification terminé"

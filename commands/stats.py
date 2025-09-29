@@ -32,7 +32,7 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 		info_lines = [f"**{char_name}**: {rating_display} - {calculate_rank(rating_int)} ({match_count} matches)"]
 
 		if char_data.get("top_char", 0) > 0:
-			info_lines.append(f"┗ Rang: #{char_data['top_char']}")
+			info_lines.append(t("stats.characters_section.rank", rank=char_data["top_char"]))
 
 		top_defeated = char_data.get("top_defeated")
 		if isinstance(top_defeated, dict) and top_defeated.get("value", 0) > 0:
@@ -42,7 +42,7 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 			# opp_rank = calculate_rank(opp_rate_int)
 			# not using it for now, I feel like it would become too cluttered
 			info_lines.append(
-				f"┗ Meilleure win: **{top_defeated.get('name','?')}** "
+				t("tracker.match.loss.description", name=top_defeated.get('name','?') ) +
 				f"({top_defeated.get('char_short','?')}) - {opp_rate_display}"
 			)
 

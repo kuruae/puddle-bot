@@ -70,6 +70,8 @@ stats:
   character_slot.name: "Personnage #{index}"
   characters_section.name: "Personnages"
   characters_section.none: "Aucun personnage avec {min_matches}+ matches"
+  characters_section.rank: "┗ Rank: #{rank}"
+  characters_section.best_win: "┗ Best Win: **{name}**"
   
   player_not_found: "❌ Joueur `{identifier}` introuvable sur puddle.farm"
   

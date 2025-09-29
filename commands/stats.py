@@ -42,7 +42,7 @@ class PlayerStats(commands.Cog, name="Player Stats"):
 			# opp_rank = calculate_rank(opp_rate_int)
 			# not using it for now, I feel like it would become too cluttered
 			info_lines.append(
-				t("tracker.match.loss.description", name=top_defeated.get('name','?') ) +
+				t("stats.characters_section.best_win", name=top_defeated.get('name','?') ) +
 				f"({top_defeated.get('char_short','?')}) - {opp_rate_display}"
 			)
 

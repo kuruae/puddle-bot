@@ -17,12 +17,15 @@ Locale selection strategy (initial version):
 """
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any, Dict, Optional
 import os
 
+from typing import Any, Dict, Optional
+from pathlib import Path
 import logging
 import yaml
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 _LOCALES_DIR = Path(__file__).parent / "locales"
 

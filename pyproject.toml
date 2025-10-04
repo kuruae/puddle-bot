@@ -1,7 +1,7 @@
 [project]
 name = "puddle-bot"
 version = "0.1.0"
-description = "Add your description here"
+description = "A Discord bot for tracking Guilty Gear Strive matches via puddle.farm API"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -10,4 +10,11 @@ dependencies = [
     "psycopg[binary]>=3.1.0",
     "python-dotenv>=1.0.0",
     "pyyaml>=6.0.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pylint>=2.17.0",
 ]

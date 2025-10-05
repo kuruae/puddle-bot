@@ -5,7 +5,7 @@ A Discord bot for tracking Guilty Gear Strive matches using [puddle.farm](https:
 ## 📚 About This Project
 
 I built this bot because my friend and I wanted to track our friends and their matches
-while also learning async python. Despite starting together, I ended up developing it alone, therefore the fork, since I also used this as an opportunity to learn a lot of new things like CI/CD pipelines which required more control.
+while also learning async python. Despite starting together, I ended up developing it alone as I used this as an opportunity to learn a lot of new things like CI/CD pipelines and automated heroku deployments which required more control.
 
 Along the way, I ended up learning:
 

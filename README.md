@@ -125,20 +125,20 @@ The API Client handles all communication with puddle.farm—see [api_client.md](
                          │ • Rate limiting │
                          └─────────────────┘
                                    ▲
-                          ┌────────┴────────┐
-                          │                 │
-                ┌─────────────────┐ ┌─────────────────┐
-                │ Match Tracker   │ │ Command Cogs    │
-                │(match_tracker.py│ │ • player_mgmt   │
-                │ • Poll matches  │ │ • stats         │
-                │ • Create embeds │ │ • leaderboard   │
-                └─────────────────┘ │ • admin         │
-                          │         └─────────────────┘
-                          │                 │
-                          ▼                 │
-                ┌─────────────────┐         │
-                │    Database     │         │
-                │ (database.py)   │◄────────┘
+                          ┌────────┴──────────┐
+                          │                   │
+                ┌──────────────────┐ ┌─────────────────┐
+                │  Match Tracker   │ │ Command Cogs    │
+                │(match_tracker.py)│ │ • player_mgmt   │
+                │ • Poll matches   │ │ • stats         │
+                │ • Create embeds  │ │ • leaderboard   │
+                └──────────────────┘ │ • admin         │
+                          │          └─────────────────┘
+                          │                   │
+                          ▼                   │
+                ┌─────────────────┐           │
+                │    Database     │           │
+                │ (database.py)   │◄──────────┘
                 │ • Player cache  │
                 │ • Match history │
                 └─────────────────┘
